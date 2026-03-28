@@ -495,7 +495,12 @@
   padding-bottom: 48px;
 }
 
-/* Rainbow progress fill — spans the full height of all phases */
+/* Rainbow progress fill — spans the full height of all phases.
+   z-index 1: sits below .timeline_item (z-index 2), which is transparent
+   except for its own content. The ::before on .timeline_centre is made
+   transparent so it no longer covers this track. The circle (inside the
+   z-index-2 item) naturally masks the track, creating a dot-on-line look.
+   The track background (#2a2a2a) provides the gray portion not yet filled. */
 .aip .story-progress-track {
   position:  absolute;
   left:      50%;
@@ -506,6 +511,7 @@
   z-index:   1;
   pointer-events: none;
   overflow:  hidden;
+  background: #2a2a2a; /* gray track — visible below the fill */
 }
 
 .aip .story-progress-fill {
@@ -521,6 +527,75 @@
   );
   pointer-events: none;
   transition: height 0.12s linear;
+}
+
+/* ── IMAGE CARD STACK CAROUSEL ────────────────────────────────── */
+
+/* Outer wrapper — padding-right / padding-bottom are injected inline
+   from JS (MAX_PEEK_X / MAX_PEEK_Y) so the layout box reflects the
+   full visual footprint of the stacked cards.                      */
+.aip .aip-carousel-root {
+  width:      100%;
+  margin-top: 1.75rem;
+}
+
+/* Subtle helper text above the stack */
+.aip .aip-carousel-hint {
+  font-size:      0.75rem;
+  letter-spacing: 0.03em;
+  color:          rgba(255,255,255,0.35);
+  margin-bottom:  0.6rem;
+  font-style:     italic;
+  pointer-events: none;
+  user-select:    none;
+}
+
+/* Stack — fills the carousel root's content area (full column width). */
+.aip .aip-card-stack {
+  position:    relative;
+  display:     block;
+  width:       100%;
+  touch-action:               pan-y;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  isolation:   isolate;
+}
+
+/* Stage — sets the front-card dimensions.
+   overflow: visible lets back-cards (shifted right + down) show outside. */
+.aip .aip-card-stage {
+  position:     relative;
+  width:        100%;
+  aspect-ratio: 16 / 10; /* wide enough for typical desktop screenshots */
+  overflow:     visible;
+}
+
+/* Individual card */
+.aip .aip-card {
+  position:      absolute;
+  inset:         0;
+  border-radius: var(--aip-radius, 18px);
+  overflow:      hidden;
+  box-shadow:    0 8px 16px rgba(0,0,0,.18), 0 0 var(--aip-shadow,24px) rgba(0,0,0,.45);
+  transform:     translate3d(0,0,0);
+  transition:    transform 280ms cubic-bezier(.22,.61,.36,1), box-shadow 280ms ease;
+  will-change:   transform;
+  background:    #1a1a1a; /* visible in letterbox areas with contain */
+  cursor:        pointer;
+}
+
+/* Image: contain shows the full screenshot without any cropping */
+.aip .aip-card img {
+  display:        block;
+  width:          100%;
+  height:         100%;
+  object-fit:     contain;
+  pointer-events: none;
+}
+
+.aip .aip-card.aip-dragging {
+  cursor:     grabbing;
+  box-shadow: 0 12px 28px rgba(0,0,0,.22), 0 0 var(--aip-shadow,24px) rgba(0,0,0,.55);
 }
 
 /* ── VERTICAL PROCESS TIMELINE ────────────────────────────────── */
@@ -558,7 +633,9 @@
   position:        relative;
 }
 
-/* Vertical line through the center */
+/* Vertical line through the center — background is now handled by
+   .story-progress-track (z-index 3) so this pseudo is transparent.
+   Keeping the pseudo in place for layout/spacing integrity. */
 .aip .timeline_centre::before {
   content:          "";
   position:         absolute;
@@ -566,7 +643,7 @@
   bottom:           0;
   left:             50%;
   width:            2px;
-  background-color: #333;
+  background-color: transparent;
   transform:        translateX(-50%);
 }
 

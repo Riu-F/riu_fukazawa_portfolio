@@ -124,7 +124,7 @@ export default function AiContext() {
         </p>
 
         {/* ── Horizontal timeline ───── */}
-        <div className="timeline" ref={tlRef as React.RefObject<HTMLDivElement>}>
+        <div className="timeline" ref={tlRef as React.RefObject<HTMLDivElement>} style={{ marginBottom: '1.25rem' }}>
           {MILESTONES.map((m) => (
             <div key={m.label} className="milestone">
               <div className="milestone-inner">

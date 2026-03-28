@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import AiImageCarousel from './AiImageCarousel';
 
 function useScrollProgress(ref: React.RefObject<HTMLElement | null>) {
   const [progress, setProgress] = useState(0);
@@ -48,6 +49,8 @@ const PHASES = [
             no buttons—so the experience felt specific, timely, and helpful?
           </strong>
         </p>
+        {/* Post-purchase screen examples */}
+        <AiImageCarousel />
       </>
     ),
   },

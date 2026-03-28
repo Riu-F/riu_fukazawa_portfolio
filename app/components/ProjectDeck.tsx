@@ -26,17 +26,16 @@
   • AI card: CTA button linking to /ai-project
 */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { DECK_CARDS, type DeckCard } from '../lib/deckData';
 import AICheckoutDemo from './AICheckoutDemo';
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 
-const N       = 3;
-const STRIP   = 54;
-const CARD_H  = 760;
-const TAB_H   = 42;
-const TOTAL_H = TAB_H + (N - 1) * STRIP + CARD_H;  /* 910 */
+const N      = 3;
+const STRIP  = 54;
+const TAB_H  = 42;
+/* CARD_H is now dynamic — computed from viewport height in ProjectDeck */
 
 /* Staggered horizontal tab offsets per card id */
 const TAB_X = [26, 210, 380];
@@ -59,17 +58,17 @@ const TAB_THEMES: TabTheme[] = [
     activeColor: '#fff',
     activeBorder: 'transparent',
   },
-  /* 1 — Accessible Design: deep purple */
+  /* 1 — Accessible Design: purple gradient */
   {
-    activeBg:    '#3b0764',
-    activeColor: '#ddd6fe',
-    activeBorder: '#3b0764',
+    activeBg:    'linear-gradient(120deg, #4c1d95 0%, #7c3aed 45%, #c084fc 100%)',
+    activeColor: '#f3e8ff',
+    activeBorder: 'transparent',
   },
-  /* 2 — Age of AI: bright green */
+  /* 2 — Age of AI: grey gradient */
   {
-    activeBg:    '#14532d',
-    activeColor: '#bbf7d0',
-    activeBorder: '#14532d',
+    activeBg:    'linear-gradient(120deg, #374151 0%, #6b7280 50%, #d1d5db 100%)',
+    activeColor: '#f9fafb',
+    activeBorder: 'transparent',
   },
 ];
 
@@ -82,7 +81,9 @@ const getBorder = (pos: number) => `hsl(0,0%,${(87  - pos * 0.55).toFixed(1)}%)`
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-export default function ProjectDeck() {
+const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stickyShellRef) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [cardH, setCardH] = useState(760);
   const [order, setOrder] = useState(DECK_CARDS.map(c => c.id));
   const busy          = useRef(false);
   const ordRef        = useRef(DECK_CARDS.map(c => c.id));
@@ -90,6 +91,30 @@ export default function ProjectDeck() {
   const deckRef       = useRef<HTMLDivElement>(null);
   const scrollerRef   = useRef<HTMLElement>(null);
   const lastTargetRef = useRef(0);  /* tracks last successfully requested targetId */
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    /*
+      Compute card height so the full deck sits inside the viewport with
+      ~3% bottom clearance. Sticky shell has ~84px vertical padding total
+      (top: clamp(0.25rem,1vh,0.75rem) ≈ 4–12px + bottom: 4.5rem = 72px).
+      TOTAL_H = TAB_H + (N-1)*STRIP + cardH → solve for cardH.
+    */
+    const computeCardH = () => {
+      /* top ~8px + bottom 1.5rem (24px) ≈ 32px total shell padding */
+      const available = Math.round(0.97 * (window.innerHeight - 32));
+      setCardH(Math.max(400, available - TAB_H - (N - 1) * STRIP));
+    };
+    computeCardH();
+    window.addEventListener('resize', computeCardH);
+    return () => window.removeEventListener('resize', computeCardH);
+  }, []);
 
   const finishAfter = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -168,18 +193,105 @@ export default function ProjectDeck() {
     return () => window.removeEventListener('keydown', onKey);
   }, [select]);
 
+  /* ── Mobile flat view — 3 clean stacked cards, no scroll section ─── */
+  if (isMobile) {
+    return (
+      <div style={{ padding: '0 1.25rem 4rem' }}>
+        {DECK_CARDS.map(card => {
+          const theme   = TAB_THEMES[card.id];
+          const isAI    = card.id === 0;
+          const Wrapper = isAI ? 'a' : 'div';
+          const wrapperProps = isAI
+            ? { href: '/ai-project', style: { display: 'block', textDecoration: 'none', color: 'inherit' } }
+            : {};
+          return (
+            <Wrapper
+              key={card.id}
+              {...wrapperProps}
+              style={{
+                display:      'block',
+                marginBottom: '1.25rem',
+                borderRadius: 12,
+                overflow:     'hidden',
+                border:       '1px solid #e5e5e5',
+                textDecoration: 'none',
+                color:          'inherit',
+                ...(isAI ? {} : {}),
+              }}
+            >
+              {/* Folder-style tab notch */}
+              <div style={{
+                background:    theme.activeBg,
+                color:         theme.activeColor,
+                padding:       '10px 20px',
+                fontFamily:    "'DM Mono', monospace",
+                fontSize:      11,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                fontWeight:    500,
+              }}>
+                <span style={{ opacity: 0.55, fontSize: 9, marginRight: 6 }}>{card.num}</span>
+                {card.tab}
+              </div>
+
+              {/* Card content — title, subtitle, intro paragraph only (no CTA, no demo) */}
+              <div style={{ padding: '24px 20px 28px', background: '#fff' }}>
+                {/* Label: matches AiIdea .h5 style */}
+                <p style={{
+                  fontFamily:    "'Inter', sans-serif",
+                  fontSize:      '0.875rem',
+                  fontWeight:    400,
+                  color:         '#888',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 0.5rem',
+                }}>
+                  {card.sub}
+                </p>
+                {/* Heading: matches AiIdea .h2 style, scaled for card */}
+                <h2 style={{
+                  fontFamily:    "'Montserrat', sans-serif",
+                  fontSize:      '1.5rem',
+                  fontWeight:    700,
+                  lineHeight:    1.275,
+                  color:         '#111',
+                  margin:        '0 0 1rem',
+                  textTransform: 'capitalize',
+                }}>
+                  {card.heading}
+                </h2>
+                {/* Body: matches AiIdea .paragraph-new style */}
+                <p style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize:   '1rem',
+                  fontWeight: 400,
+                  lineHeight: '1.6em',
+                  color:      '#444',
+                  margin:     0,
+                }}>
+                  {card.body}
+                </p>
+                {/* No CTA buttons on mobile */}
+              </div>
+            </Wrapper>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     /*
-      Outer scroller — (N+1) viewports tall.
+      Outer scroller — 300vh tall.
       This is the scroll runway. As the user moves through it, the sticky
       shell inside stays fixed and the active project changes.
     */
     <section
       ref={scrollerRef}
-      style={{ position: 'relative', height: '300vh' }}
+      style={{ position: 'relative', height: '300vh', marginTop: '-2rem' }}
     >
       {/* Sticky shell — remains in viewport for the full scroll runway */}
       <div
+        ref={stickyShellRef}
         style={{
           position:       'sticky',
           top:            0,
@@ -189,7 +301,7 @@ export default function ProjectDeck() {
           flexDirection:  'column',
           alignItems:     'center',
           justifyContent: 'flex-start',
-          padding:        'clamp(0.25rem, 1vh, 0.75rem) clamp(1.5rem, 3vw, 3rem) 4.5rem',
+          padding:        'clamp(0.25rem, 1vh, 0.75rem) clamp(1.5rem, 3vw, 3rem) 1.5rem',
           fontFamily:     "'DM Mono', 'Courier New', monospace",
         }}
       >
@@ -199,7 +311,7 @@ export default function ProjectDeck() {
           style={{
             position:   'relative',
             width:      'min(100%, 1240px)',
-            height:     TOTAL_H,
+            height:     TAB_H + (N - 1) * STRIP + cardH,
             userSelect: 'none',
             outline:    'none',
           }}
@@ -215,6 +327,7 @@ export default function ProjectDeck() {
                 isFront={isFront}
                 tabX={TAB_X[card.id]}
                 theme={TAB_THEMES[card.id]}
+                cardH={cardH}
                 onPick={() => select(card.id)}
               />
             );
@@ -223,7 +336,9 @@ export default function ProjectDeck() {
       </div>
     </section>
   );
-}
+});
+
+export default ProjectDeck;
 
 /* ── CardPanel ──────────────────────────────────────────────────────── */
 
@@ -233,10 +348,11 @@ interface CardPanelProps {
   isFront: boolean;
   tabX:    number;
   theme:   TabTheme;
+  cardH:   number;
   onPick:  () => void;
 }
 
-function CardPanel({ card, pos, isFront, tabX, theme, onPick }: CardPanelProps) {
+function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanelProps) {
   const [show, setShow] = useState(false);
 
   /* Content reveal: waits for deck transition to complete */
@@ -265,7 +381,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, onPick }: CardPanelProps) 
         left:       0,
         right:      0,
         top,
-        height:     CARD_H,
+        height:     cardH,
         zIndex:     zi,
         transition: `top ${DUR}ms ${EASE}`,
         willChange: 'top',
@@ -346,7 +462,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, onPick }: CardPanelProps) 
               overflow:   'hidden',
             }}>
 
-              {/* ── Left: title, subtitle, CTA ── */}
+              {/* ── Left: title, subtitle, CTA — AiIdea typography ── */}
               <div style={{
                 width:         '36%',
                 flexShrink:    0,
@@ -356,57 +472,48 @@ function CardPanel({ card, pos, isFront, tabX, theme, onPick }: CardPanelProps) 
                 padding:       '28px 36px 40px 52px',
                 borderRight:   '1px solid #ebebeb',
               }}>
+                {/* Label — mirrors AiIdea .h5 style */}
+                <p style={{
+                  fontFamily:    "'Inter', sans-serif",
+                  fontSize:      '1rem',
+                  fontWeight:    400,
+                  lineHeight:    '1.6em',
+                  color:         '#888',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 0.5rem',
+                }}>
+                  {card.sub}
+                </p>
+
+                {/* Heading — mirrors AiIdea .h2 style, sized for card */}
                 <h2 style={{
                   fontFamily:    "'Montserrat', sans-serif",
-                  fontSize:      34,
+                  fontSize:      '2rem',
                   fontWeight:    700,
-                  lineHeight:    1.1,
+                  lineHeight:    1.275,
                   color:         '#111',
-                  letterSpacing: '-0.02em',
-                  marginBottom:  10,
+                  textTransform: 'capitalize',
+                  margin:        '0 0 1.25rem',
+                  paddingBottom: 10,
                   whiteSpace:    'pre-line',
                 }}>
                   {card.heading}
                 </h2>
 
+                {/* Body — mirrors AiIdea .paragraph-new style */}
                 <p style={{
-                  fontFamily:    "'DM Mono', monospace",
-                  fontSize:      9.5,
-                  letterSpacing: '0.13em',
-                  textTransform: 'uppercase',
-                  color:         '#aaa',
-                  marginBottom:  20,
-                }}>
-                  {card.sub}
-                </p>
-
-                <div style={{ width: 28, height: 1, background: '#e0e0e0', marginBottom: 18 }} />
-
-                <p style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize:   12.5,
-                  lineHeight: 1.80,
-                  color:      '#777',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize:   '1rem',
+                  fontWeight: 400,
+                  lineHeight: '1.6em',
+                  color:      '#444',
+                  margin:     '0 0 1.25rem',
                 }}>
                   {card.body}
                 </p>
 
                 {card.btn && (
-                  <a
-                    href="/ai-project"
-                    style={{
-                      display:        'inline-block',
-                      marginTop:      28,
-                      fontFamily:     "'DM Mono', monospace",
-                      fontSize:       9.5,
-                      letterSpacing:  '0.13em',
-                      textTransform:  'uppercase',
-                      color:          '#111',
-                      textDecoration: 'none',
-                      borderBottom:   '1px solid #111',
-                      paddingBottom:  2,
-                    }}
-                  >
+                  <a href="/ai-project" className="deck-btn deck-btn--ai">
                     {card.btn}
                   </a>
                 )}
@@ -419,75 +526,94 @@ function CardPanel({ card, pos, isFront, tabX, theme, onPick }: CardPanelProps) 
 
             </div>
           ) : (
-            /* Other projects — standard heading / body layout */
+            /* Other projects — same two-column split as AI card */
             <div style={{
-              padding:    '12px 52px 44px',
+              position:   'absolute',
+              inset:      0,
+              paddingTop: 22,
+              display:    'flex',
               opacity:    show ? 1 : 0,
-              transform:  show ? 'translateY(0px)' : 'translateY(9px)',
+              transform:  show ? 'translateY(0)' : 'translateY(9px)',
               transition: 'opacity 0.34s ease, transform 0.34s ease',
+              overflow:   'hidden',
             }}>
-              {/* Large heading */}
-              <h2 style={{
-                fontFamily:    "'Montserrat', sans-serif",
-                fontSize:      44,
-                fontWeight:    700,
-                lineHeight:    1.07,
-                color:         '#111',
-                letterSpacing: '-0.02em',
-                marginBottom:  10,
-                whiteSpace:    'pre-line',
+
+              {/* ── Left: title, subtitle, body, CTA — AiIdea typography ── */}
+              <div style={{
+                width:          '36%',
+                flexShrink:     0,
+                display:        'flex',
+                flexDirection:  'column',
+                justifyContent: 'center',
+                padding:        '28px 36px 40px 52px',
+                borderRight:    '1px solid #ebebeb',
               }}>
-                {card.heading}
-              </h2>
+                {/* Label — mirrors AiIdea .h5 style */}
+                <p style={{
+                  fontFamily:    "'Inter', sans-serif",
+                  fontSize:      '1rem',
+                  fontWeight:    400,
+                  lineHeight:    '1.6em',
+                  color:         '#888',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 0.5rem',
+                }}>
+                  {card.sub}
+                </p>
 
-              {/* Sub */}
-              <p style={{
-                fontFamily:    "'DM Mono', monospace",
-                fontSize:      9.5,
-                letterSpacing: '0.13em',
-                textTransform: 'uppercase',
-                color:         '#aaa',
-                marginBottom:  22,
+                {/* Heading — mirrors AiIdea .h2 style, sized for card */}
+                <h2 style={{
+                  fontFamily:    "'Montserrat', sans-serif",
+                  fontSize:      '2rem',
+                  fontWeight:    700,
+                  lineHeight:    1.275,
+                  color:         '#111',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 1.25rem',
+                  paddingBottom: 10,
+                  whiteSpace:    'pre-line',
+                }}>
+                  {card.heading}
+                </h2>
+
+                {/* Body — mirrors AiIdea .paragraph-new style */}
+                <p style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize:   '1rem',
+                  fontWeight: 400,
+                  lineHeight: '1.6em',
+                  color:      '#444',
+                  margin:     '0 0 1.25rem',
+                }}>
+                  {card.body}
+                </p>
+
+                {card.btn && (
+                  <a href="#" className="deck-btn">
+                    {card.btn}
+                  </a>
+                )}
+              </div>
+
+              {/* ── Right: placeholder until demo is built ── */}
+              <div style={{
+                flex:            1,
+                display:         'flex',
+                alignItems:      'center',
+                justifyContent:  'center',
+                background:      'hsl(0,0%,97%)',
               }}>
-                {card.sub}
-              </p>
+                <span style={{
+                  fontFamily:    "'DM Mono', monospace",
+                  fontSize:      10,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color:         '#ccc',
+                }}>
+                  {card.num} — Coming soon
+                </span>
+              </div>
 
-              {/* Rule */}
-              <div style={{ width: 28, height: 1, background: '#e0e0e0', marginBottom: 20 }} />
-
-              {/* Body text */}
-              <p style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize:   12.5,
-                lineHeight: 1.80,
-                color:      '#777',
-                maxWidth:   480,
-              }}>
-                {card.body}
-              </p>
-
-              {/* CTA button */}
-              {card.btn && (
-                <a
-                  href="#"
-                  style={{
-                    display:        'inline-block',
-                    marginTop:      24,
-                    fontFamily:     "'DM Mono', monospace",
-                    fontSize:       9.5,
-                    letterSpacing:  '0.13em',
-                    textTransform:  'uppercase',
-                    color:          '#111',
-                    textDecoration: 'none',
-                    borderBottom:   '1px solid #111',
-                    paddingBottom:  2,
-                    opacity:        show ? 1 : 0,
-                    transition:     'opacity 0.34s ease 0.1s',
-                  }}
-                >
-                  {card.btn}
-                </a>
-              )}
             </div>
           )
         )}

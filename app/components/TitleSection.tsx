@@ -11,12 +11,20 @@
   The title renders as plain text — no custom "i" treatment.
 */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FONTS, TAGLINES, PROBE_PX, TARGET_VH, type FontDef } from '../lib/titleData';
 
 export default function TitleSection() {
   const titleRef   = useRef<HTMLDivElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   /*
     Cap-height ratio cache.
@@ -78,7 +86,7 @@ export default function TitleSection() {
     applyFont(idx);
   }, [applyFont]);
 
-  /* ── Main setup effect ──────────────────────────────────────────── */
+  /* ── Effect 1: probe setup, font preload, resize handler ───────── */
   useEffect(() => {
     /* Hidden probe span for cap-height measurement */
     const probe = document.createElement('span');
@@ -110,7 +118,21 @@ export default function TitleSection() {
     const onResize = () => applyFont(fontIdxRef.current);
     window.addEventListener('resize', onResize);
 
-    /* ── Flywheel tick ────────────────────────────────────────────── */
+    return () => {
+      window.removeEventListener('resize', onResize);
+      probe.remove();
+    };
+  }, [applyFont, measureCapRatio]);
+
+  /* ── Effect 2: cycling — interval on mobile, flywheel on desktop ── */
+  useEffect(() => {
+    if (isMobile) {
+      /* Mobile: simple 500ms interval, no scroll/wheel needed */
+      const id = setInterval(switchFont, 500);
+      return () => clearInterval(id);
+    }
+
+    /* Desktop: velocity-based flywheel driven by scroll and wheel */
     function flywheelTick(now: number) {
       const dt = lastRAFTimeRef.current
         ? Math.min(now - lastRAFTimeRef.current, 50)
@@ -134,7 +156,6 @@ export default function TitleSection() {
     }
     rafIdRef.current = requestAnimationFrame(flywheelTick);
 
-    /* ── Wheel + scroll → build velocity ─────────────────────────── */
     const onWheel = (e: WheelEvent) => {
       velocityRef.current = Math.min(
         velocityRef.current + Math.abs(e.deltaY) * 0.0325,
@@ -152,22 +173,37 @@ export default function TitleSection() {
 
     return () => {
       cancelAnimationFrame(rafIdRef.current);
-      window.removeEventListener('resize',  onResize);
       window.removeEventListener('wheel',   onWheel);
       window.removeEventListener('scroll',  onScroll);
-      probe.remove();
     };
-  }, [applyFont, measureCapRatio, switchFont]);
+  }, [isMobile, switchFont]);
 
   /*
-    All three hero text layers live in hero_bottom so they shift as one
-    unit when the JS font-size changes — no positional drift between them.
+    Mobile: render a completely different DOM structure so the layout is
+    tagline → hello-intro → rotated wordmark, with no CSS `order` tricks.
 
-    Reading order:
-      1. .hello-intro  — "Hello, I'm"  (small, understated)
-      2. .title        — "Riu"          (hero focal point, JS-sized)
-      3. .tagline      — cycling phrase (secondary, below title)
+    The fragment dissolves — its two children become direct flex children
+    of .hero, which on mobile is a flex column filling 100svh.
+
+    Desktop: hello-intro → title → tagline in hero_bottom (unchanged).
   */
+  if (isMobile) {
+    return (
+      <>
+        {/* Top text block: subtitle first, then "Hello, I'm" */}
+        <div className="hero_mobile_text">
+          <p className="tagline" ref={taglineRef}>{TAGLINES[0]}</p>
+          <p className="hello-intro">Hello, I&rsquo;m</p>
+        </div>
+
+        {/* Wordmark: "Riu" rotated 90° as a single sideways wordmark */}
+        <div className="hero_mobile_wordmark_wrap">
+          <div className="title" ref={titleRef}>Riu</div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="hero_bottom">
       <p className="hello-intro">Hello, I&rsquo;m</p>
