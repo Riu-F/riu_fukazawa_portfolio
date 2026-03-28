@@ -112,7 +112,7 @@ export default function AiImageCarousel() {
     let drag: Drag | null = null;
 
     function onDown(e: PointerEvent) {
-      if (!root.contains(e.target as Node)) return;
+      if (!root || !root.contains(e.target as Node)) return;
       isActive = true;
       drag = { sx: e.clientX, sy: e.clientY, dx: 0, dy: 0, moved: 0 };
       cards()[0]?.classList.add('aip-dragging');
@@ -170,7 +170,7 @@ export default function AiImageCarousel() {
     }
 
     function onClick(e: MouseEvent) {
-      if (!root.contains(e.target as Node)) return;
+      if (!root || !root.contains(e.target as Node)) return;
       if (performance.now() - lastGestureAt < 60) return;
       lastManual = performance.now();
       advance();
