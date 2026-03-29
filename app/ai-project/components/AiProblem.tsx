@@ -13,7 +13,7 @@ function BentoBox({ title, teaser, expandedTitle, expandedContent, isOpen, onTog
   return (
     <div
       className={`bento-box${isOpen ? ' expanded' : ''}`}
-      onClick={() => { if (!isOpen) onToggle(); }}
+      onClick={(e) => { e.stopPropagation(); if (!isOpen) onToggle(); }}
       role="button"
       tabIndex={0}
       aria-expanded={isOpen}
@@ -220,11 +220,11 @@ export default function AiProblem() {
                     ['AI-Generated Itineraries & Trip Builders','Auto-generate suggested activities, routes, and day plans.','Typically built from general content + search history, not from deeper lifestyle, confidence level, or accessibility needs.'],
                     ['Rule-Based Post-Purchase Emails & Alerts','Send confirmations, reminders, and generic pre-trip checklists.','One-size-fits-all messaging; little adaptation to who the traveller is or what situation they\'re in.'],
                   ].map(([type, good, bad]) => (
-                    <>
-                      <div key={`t-${type}`} className="table-outline"><div className="paragraph-new table-spacing"><strong>{type}</strong></div></div>
-                      <div key={`g-${type}`} className="table-outline"><div className="paragraph-new table-spacing">{good}</div></div>
-                      <div key={`b-${type}`} className="table-outline"><div className="paragraph-new table-spacing">{bad}</div></div>
-                    </>
+                    <div key={type} style={{ display: 'contents' }}>
+                      <div className="table-outline"><div className="paragraph-new table-spacing"><strong>{type}</strong></div></div>
+                      <div className="table-outline"><div className="paragraph-new table-spacing">{good}</div></div>
+                      <div className="table-outline"><div className="paragraph-new table-spacing">{bad}</div></div>
+                    </div>
                   ))}
                 </div>
                 <div className="h5" style={{ marginTop: '1.25rem' }}>Opportunity Areas</div>

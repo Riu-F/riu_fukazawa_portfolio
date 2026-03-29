@@ -222,7 +222,7 @@ export default function AiProcess() {
         </p>
       </div>
 
-      <div style={{ position: 'relative' }} ref={innerRef}>
+      <div className="aip-story-phases" style={{ position: 'relative' }} ref={innerRef}>
         {/* Rainbow progress fill — spans full height of the phases */}
         <div className="story-progress-track" aria-hidden="true">
           <div className="story-progress-fill" style={{ height: `${progress}%` }} />

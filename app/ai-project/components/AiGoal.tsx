@@ -1,6 +1,6 @@
 export default function AiGoal() {
   return (
-    <section className="default-section">
+    <section className="default-section aip-mobile-unbox">
       <div className="default-container w-container">
         <div className="container-limit-width">
           <div className="bento-box-style-only">

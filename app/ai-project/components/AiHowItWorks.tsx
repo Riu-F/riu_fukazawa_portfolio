@@ -32,8 +32,8 @@ export default function AiHowItWorks() {
           <h2 className="h2">how does it work?</h2>
         </div>
 
-        {/* Title row */}
-        <div className="timeline10_row">
+        {/* Title row — hidden on mobile via .timeline10-top-labels-row */}
+        <div className="timeline10_row timeline10-top-labels-row">
           <div className="timeline10_item">
             <div className="h3">(Basically)</div>
           </div>

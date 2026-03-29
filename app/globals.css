@@ -284,6 +284,241 @@ body {
   background: rgba(0,0,0,0.15);
 }
 
+/* Mobile: folder-tab menu (desktop pill hidden) */
+.aip-nav-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .aip-nav-bar--desktop {
+    display: none !important;
+  }
+
+  .aip-nav-mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  .aip-nav-mobile {
+    display: none !important;
+  }
+}
+
+.aip-nav-mobile-toggle {
+  position: fixed;
+  z-index:  10002;
+  top:      max(10px, env(safe-area-inset-top, 0px));
+  right:    max(10px, env(safe-area-inset-right, 0px));
+  width:    46px;
+  height:   46px;
+  padding:  0;
+  border:   none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aip-nav-mobile-toggle:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.aip-nav-mobile-toggle-bars,
+.aip-nav-mobile-toggle-close {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
+}
+
+.aip-nav-mobile-toggle-bars {
+  width: 20px;
+  height: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.aip-nav-mobile-toggle-bars span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 1px;
+  background: #222;
+  flex-shrink: 0;
+}
+
+.aip-nav-mobile-toggle-close {
+  display: none;
+  width: 22px;
+  height: 22px;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-weight: 300;
+  color: #111;
+  align-items: center;
+  justify-content: center;
+}
+
+.aip-nav-mobile-toggle-close::before {
+  content: '×';
+}
+
+.aip-nav-mobile--open .aip-nav-mobile-toggle-bars {
+  display: none;
+}
+
+.aip-nav-mobile--open .aip-nav-mobile-toggle-close {
+  display: flex;
+}
+
+.aip-nav-mobile-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(20, 22, 28, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.aip-nav-mobile--open .aip-nav-mobile-backdrop {
+  display: block;
+}
+
+.aip-nav-mobile-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10001;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+  transform: translateY(100%);
+  transition: transform 0.44s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.aip-nav-mobile--open .aip-nav-mobile-dock {
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.aip-folder {
+  position: relative;
+  flex: 0 0 auto;
+  margin-bottom: -6px;
+}
+
+.aip-folder--projects {
+  z-index: 1;
+}
+
+.aip-folder--contact {
+  z-index: 2;
+  margin-bottom: 0;
+}
+
+.aip-folder-tab {
+  display: inline-block;
+  margin-left: 18px;
+  padding: 6px 18px 2px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 10px 10px 0 0;
+  position: relative;
+  top: 1px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.aip-folder--projects .aip-folder-tab {
+  background: #e8e4dc;
+  color: #3d3a35;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+}
+
+.aip-folder--contact .aip-folder-tab {
+  background: linear-gradient(180deg, #fff6a8 0%, #ffe566 100%);
+  color: #4a4420;
+  border: 1px solid rgba(180, 150, 40, 0.35);
+  border-bottom: none;
+}
+
+.aip-folder-sheet {
+  border-radius: 0 14px 0 0;
+  padding: 1rem 1.15rem 1.35rem;
+  box-shadow:
+    0 -6px 0 rgba(0, 0, 0, 0.04),
+    0 -12px 32px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.aip-folder-sheet--projects {
+  background: linear-gradient(180deg, #f3efe6 0%, #ebe6dc 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+}
+
+.aip-folder-sheet--contact {
+  background: linear-gradient(180deg, #fff9c4 0%, #ffe681 92%, #ffd966 100%);
+  border: 1px solid rgba(200, 170, 50, 0.45);
+  border-bottom: none;
+}
+
+.aip-folder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.aip-folder-list a {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-decoration: none;
+  display: block;
+  padding: 0.45rem 0.25rem;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.aip-folder-sheet--projects .aip-folder-list a:hover,
+.aip-folder-sheet--projects .aip-folder-list a:focus-visible {
+  background: rgba(255, 255, 255, 0.55);
+  color: #000;
+}
+
+.aip-folder-sheet--contact .aip-folder-list a:hover,
+.aip-folder-sheet--contact .aip-folder-list a:focus-visible {
+  background: rgba(255, 255, 255, 0.45);
+  color: #000;
+}
+
+.aip-folder-list a:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
 /* ── DECK BUTTON ─────────────────────────────────────────────────── */
 /*
   Combines button-inverted shape (rounded, border, lift-on-hover)

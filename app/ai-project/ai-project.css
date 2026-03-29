@@ -273,19 +273,17 @@
   padding:          1.25rem 1.25rem 1rem;
   background-color: #fafafa;
   color:            #111;
-  border:           0.095px solid #35323333;
+  border:           0.095rem solid #35323333;
   cursor:           pointer;
   transition:
     flex-grow 0.35s ease,
-    transform 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .aip .bento-box:not(.expanded):hover {
-  transform:        scale(1.03);
-  background-color: #000;
-  color:            #fafafa;
+  background-color: #353233;
+  color:            #fff;
   z-index:          2;
 }
 
@@ -332,7 +330,7 @@
 .aip .bento-box-style-only {
   background-color: #fafafa;
   color:            #111;
-  border:           0.095px solid #35323333;
+  border:           0.095rem solid #35323333;
   flex:             1;
   min-width:        0;
   padding:          1rem 1.5rem;
@@ -495,6 +493,17 @@
   padding-bottom: 48px;
 }
 
+/* Centre story phases under the same max width as the rest of the AI page (desktop) */
+.aip .section-story-timeline .aip-story-phases {
+  max-width:   960px;
+  width:       100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing:  border-box;
+  padding-left:  2rem;
+  padding-right: 2rem;
+}
+
 /* Rainbow progress fill — spans the full height of all phases.
    z-index 1: sits below .timeline_item (z-index 2), which is transparent
    except for its own content. The ::before on .timeline_centre is made
@@ -608,12 +617,15 @@
 .aip .timeline_item {
   z-index:               2;
   display:               grid;
-  grid-template-columns: 1fr 180px 1fr;
+  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
   grid-column-gap:       0;
   grid-row-gap:          0;
   padding-top:           80px;
   padding-bottom:        80px;
   position:              relative;
+  max-width:             100%;
+  min-width:             0;
+  box-sizing:            border-box;
 }
 
 .aip .timeline_item.hidden {
@@ -625,6 +637,7 @@
   justify-content: flex-end;
   align-items:    flex-start;
   padding-right:  2rem;
+  min-width:      0;
 }
 
 .aip .timeline_centre {
@@ -664,6 +677,13 @@
 
 .aip .timeline_right {
   padding-left: 2rem;
+  min-width:    0;
+  max-width:    100%;
+}
+
+/* Keep story body copy within readable measure on desktop */
+.aip .section-story-timeline .timeline_right .paragraph-new.white {
+  max-width: min(65ch, 100%);
 }
 
 .aip .timeline_date-text {
@@ -887,6 +907,7 @@
 .aip .button-inverted:hover { transform: translateY(-4px); }
 
 /* ── NAV ──────────────────────────────────────────────────────── */
+/* Desktop pill (.aip-nav-bar--desktop); mobile uses folder menu in globals.css */
 .aip-nav-bar {
   z-index:          100;
   position:         fixed;
@@ -905,6 +926,12 @@
   box-shadow:       0 18px 45px rgba(15,23,42,0.10), 0 0 0 1px rgba(255,255,255,0.40);
   font-size:        0.875rem;
   white-space:      nowrap;
+}
+
+@media (max-width: 768px) {
+  .aip-nav-bar--desktop {
+    display: none !important;
+  }
 }
 
 .aip-nav-bar a {
@@ -951,6 +978,29 @@
 }
 
 @media (max-width: 768px) {
+  /* Hero: full viewport height, centred composition */
+  .aip .project---title-section {
+    height:         100vh;
+    min-height:     100vh;
+    max-height:     none;
+    margin-bottom:  -80px;
+  }
+  .aip .flex-title-page-center {
+    justify-content: center;
+    align-items:     stretch;
+    min-height:      100%;
+    padding-top:     max(1.5rem, env(safe-area-inset-top, 0px));
+    padding-bottom:  max(1.5rem, env(safe-area-inset-bottom, 0px));
+    gap:             0.5rem;
+  }
+  .aip .flex-title-page-center > div {
+    display:        flex;
+    flex-direction: column;
+    justify-content: center;
+    flex:           1;
+    min-height:     0;
+  }
+
   .aip .h1,
   .aip .h1.black {
     font-size: clamp(3.5rem, 16vw, 7rem);
@@ -962,6 +1012,38 @@
   .aip .h2 {
     font-size: clamp(2rem, 6vw, 4rem);
   }
+
+  /* Story phases wrapper — avoid double horizontal padding with .timeline_item */
+  .aip .section-story-timeline .aip-story-phases {
+    max-width:    none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Story timeline: vertical blocks, no centre rail */
+  .aip .section-story-timeline .timeline_item {
+    display:               flex;
+    flex-direction:        column;
+    align-items:           stretch;
+    gap:                   1rem;
+    grid-template-columns: unset;
+    padding-top:           48px;
+    padding-bottom:        48px;
+  }
+  .aip .section-story-timeline .timeline_centre {
+    display: none;
+  }
+  .aip .section-story-timeline .timeline_left {
+    text-align:    left;
+    justify-content: flex-start;
+    align-items:   flex-start;
+    padding-right: 0;
+    order:         1;
+  }
+  .aip .section-story-timeline .timeline_right {
+    padding-left: 0;
+    order:        2;
+  }
   .aip .timeline_date-text {
     font-size:  24px;
     position:   relative;
@@ -971,31 +1053,140 @@
     position: relative;
     top:      auto;
   }
-  .aip .timeline_item {
-    grid-template-columns: 80px 40px 1fr;
-    padding-top:    48px;
-    padding-bottom: 48px;
-  }
 
   .aip .timeline {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .aip .table-5-collums {
-    grid-template-columns: 1fr;
-    overflow-x: auto;
-    display:    block;
+  /* Competitor: full-width table hidden; compact 5-col grid stays readable */
+  .aip .table-5-collums.aip-competitor-table-full {
+    display: none !important;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact {
+    display:               grid !important;
+    grid-template-columns: minmax(0, 1.35fr) repeat(4, minmax(0, 0.85fr));
+    overflow-x:            hidden;
+    font-size:             0.8125rem;
+    margin-bottom:         1.25rem;
+    width:                 100%;
+    max-width:             100%;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .paragraph-new.table-spacing {
+    font-size:   inherit;
+    line-height: 1.35;
+    word-break:  break-word;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .table-outline {
+    min-width: 0;
+    overflow:  hidden;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-criterion .paragraph-new.table-spacing {
+    line-height: 1.25;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-criterion strong {
+    font-size:   0.62rem;
+    font-weight: 600;
+    line-height: 1.28;
+  }
+  /* Compact table: emoji only in data cells; full text in native tooltip */
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-cell-rest {
+    display: none;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .table-outline:not(.table-header) .paragraph-new.table-spacing {
+    text-align: center;
+    font-size:  1.1rem;
+    line-height: 1.2;
+  }
+  /* Rotated brand titles — clipped to cell */
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-rotate-header {
+    vertical-align: bottom;
+    padding:        0.2rem 1px 0.35rem;
+    max-height:     4.5rem;
+    box-sizing:     border-box;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-header-label {
+    display:         flex;
+    align-items:     flex-end;
+    justify-content: center;
+    min-height:      0;
+    max-height:      4.1rem;
+    height:          4.1rem;
+    width:           100%;
+    padding:         0 1px 2px;
+    margin:          0;
+    overflow:        hidden;
+    box-sizing:      border-box;
+  }
+  .aip .table-5-collums.aip-competitor-table-compact .aip-competitor-header-label strong {
+    display:          inline-block;
+    transform:        rotate(-90deg);
+    transform-origin: right bottom;
+    white-space:      nowrap;
+    font-size:        0.52rem;
+    font-weight:      600;
+    letter-spacing:   0.01em;
+    line-height:      1;
+    max-width:        3.6rem;
+    overflow:         hidden;
+    text-overflow:    ellipsis;
   }
   .aip ._3x5-grid {
     display:    block;
     overflow-x: auto;
   }
+
+  /* Core Design Insights / The Goal: full-bleed text, no inset box */
+  .aip .aip-mobile-unbox .container-limit-width {
+    max-width:     none;
+    padding-left:  0;
+    padding-right: 0;
+    width:         100%;
+  }
+  .aip .aip-mobile-unbox .bento-box-style-only {
+    border:              none;
+    background-color:    transparent;
+    padding-left:        0;
+    padding-right:       0;
+  }
+
+  /* Not Your Typical UX — horizontal milestone rail */
+  .aip .aip-context-milestones {
+    display: none;
+  }
+
+  /* The Story — match page gutters on small screens */
+  .aip .section-story-timeline .aip-story-phases .timeline_item {
+    padding-left:  max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  }
+  .aip .section-story-timeline .story-intro.container-limit-width,
+  .aip .section-story-timeline .container-limit-width.story-intro {
+    padding-left:  max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  }
+
+  /* Bento: readable collapse + reliable tap target */
+  .aip .bento-row {
+    overflow: visible;
+  }
+  .aip .bento-box {
+    flex:          none;
+    width:         100%;
+    min-height:    0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action:  manipulation;
+  }
+  .aip .bento-box.expanded {
+    overflow: visible;
+  }
+  .aip .bento-box.expanded .bento-content-expanded {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 479px) {
+  /* Hero height governed by 768px rule (100vh); keep bottom overlap only */
   .aip .project---title-section {
-    height: auto;
-    min-height: 60vh;
     margin-bottom: -60px;
   }
   .aip .h1,
@@ -1017,12 +1208,40 @@
   .aip .accordion_1_toggle_icon { transition: none; }
 }
 
-/* ── PERSONA TABLE ────────────────────────────────────────────── */
-.aip .persona-table {
+/* ── OUTPUT / OUTCOME — persona + checklist grid ─────────────── */
+.aip .aip-outcome-grid {
   display:               grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "p1bento p2bento p3bento"
+    "p1a     p2a     p3a"
+    "p1b     p2b     p3b";
+  gap:                   1rem;
   margin:                2rem 0;
+  align-items:           start;
+  width:                 100%;
+  max-width:             100%;
+  min-width:             0;
+  box-sizing:            border-box;
 }
+
+.aip .aip-outcome-grid .bento-box,
+.aip .aip-outcome-grid .table-divider-columns {
+  min-width:     0;
+  max-width:     100%;
+  overflow-wrap: break-word;
+  word-break:    break-word;
+}
+
+.aip .aip-outcome-p1bento { grid-area: p1bento; }
+.aip .aip-outcome-p2bento { grid-area: p2bento; }
+.aip .aip-outcome-p3bento { grid-area: p3bento; }
+.aip .aip-outcome-p1a { grid-area: p1a; }
+.aip .aip-outcome-p2a { grid-area: p2a; }
+.aip .aip-outcome-p3a { grid-area: p3a; }
+.aip .aip-outcome-p1b { grid-area: p1b; }
+.aip .aip-outcome-p2b { grid-area: p2b; }
+.aip .aip-outcome-p3b { grid-area: p3b; }
 
 .aip .table-divider-columns {
   padding:      1rem;
@@ -1031,10 +1250,13 @@
   border-bottom: 1px solid #e5e5e5;
 }
 
-.aip .table-divider-columns:nth-child(3),
-.aip .table-divider-columns:nth-child(6),
 .aip .table-divider-columns.no-boarder {
   border-right: 1px solid #e5e5e5;
+}
+
+/* Competitor: compact table only on small screens */
+.aip .aip-competitor-table-compact {
+  display: none;
 }
 
 /* Checklist bullet markers */
@@ -1049,8 +1271,8 @@
   line-height:   1.5;
 }
 
-/* Give the persona table lists enough left indent so emoji markers stay inside cells */
-.aip .persona-table ul,
+/* Persona outcome lists — marker indent */
+.aip .aip-outcome-grid ul,
 .aip .table-divider-columns ul {
   padding-left: 1.75rem;
   list-style:   disc; /* ensures marker box exists so ::marker content renders */
@@ -1230,9 +1452,83 @@
   .aip .timeline10_row {
     grid-template-columns: 1fr;
   }
+  /* Wins over base .timeline10_row { display: grid } (same specificity, later source) */
+  .aip .timeline10_row.timeline10-top-labels-row {
+    display: none !important;
+  }
   .aip .timeline10_circle-wrapper { display: none; }
   .aip .timeline10_progress       { display: none; }
   .aip .timeline10_item { padding: 1.5rem 0; border-bottom: 1px solid #e5e5e5; }
-  .aip .persona-table   { grid-template-columns: 1fr; }
   .aip .table-divider-columns { border: 1px solid #e5e5e5; margin-bottom: -1px; }
+}
+
+/* Output / Outcome — stack each persona; contain width (no horizontal scroll) */
+@media (max-width: 768px) {
+  .aip .aip-outcome-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "p1bento"
+      "p1a"
+      "p1b"
+      "p2bento"
+      "p2a"
+      "p2b"
+      "p3bento"
+      "p3a"
+      "p3b";
+    width:       100%;
+    max-width:   100%;
+    min-width:   0;
+    overflow-x:  hidden;
+    box-sizing:  border-box;
+  }
+
+  .aip .aip-outcome-grid .bento-box {
+    max-width:  100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .aip .aip-outcome-grid .table-divider-columns {
+    max-width:       100%;
+    overflow-x:      hidden;
+    box-sizing:      border-box;
+    padding-left:    0.75rem;
+    padding-right:   0.75rem;
+    overflow-wrap:   anywhere;
+    word-break:      break-word;
+  }
+
+  .aip .aip-outcome-grid .table-divider-columns li,
+  .aip .aip-outcome-grid .table-divider-columns .paragraph-new {
+    max-width:     100%;
+    overflow-wrap: anywhere;
+    word-break:    break-word;
+  }
+
+  .aip .aip-outcome-grid ul {
+    padding-left: 1.35rem;
+  }
+
+  .aip .aip-outcome-grid .code-block {
+    white-space:   pre-wrap;
+    word-break:    break-word;
+    overflow-wrap: anywhere;
+    max-width:     100%;
+    box-sizing:    border-box;
+    font-size:     0.68rem;
+  }
+}
+
+/* ── AiCheckoutPrototype — rec card grid ──────────────────────── */
+.aip .aip-proto-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .aip .aip-proto-rec-grid {
+    grid-template-columns: 1fr;
+  }
 }
