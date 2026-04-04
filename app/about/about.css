@@ -1,0 +1,707 @@
+/* About board v1 — mechanics first (minimal styling) */
+
+.about {
+  min-height: 100vh;
+  width: 100%;
+  background: #f7f7f7;
+  color: #111;
+  /*
+   * Reduce browser back/forward swipe from horizontal overscroll (esp. trackpad).
+   * Not a complete guarantee on all OS/browser combos (see README).
+   */
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+}
+
+/* Fullscreen viewport window into the board */
+.about-viewport {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #f7f7f7;
+  overscroll-behavior: contain;
+  overscroll-behavior-x: none;
+  /* Prevent selection while dragging */
+  user-select: none;
+  -webkit-user-select: none;
+  /*
+   * No default touch gestures on the canvas; wheel is handled in JS with { passive: false }
+   * so the board can call preventDefault and reduce browser page zoom.
+   */
+  touch-action: none;
+  cursor: grab;
+}
+
+.about-viewport[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.about-viewport__zoom {
+  position: absolute;
+  z-index: 40;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.about-viewport__zoom button {
+  margin: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  min-width: 36px;
+}
+
+.about-viewport__zoom button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.about-viewport__zoom button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.about-viewport__zoom button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* The big board surface (moves 1:1 with camera) */
+.about-board {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+/*
+ * Focus mode: heavy blur on everything except the focused item — no full-viewport veil
+ * (veil sat above the board and washed out the selection). De-emphasis is per-layer only.
+ */
+.about-board[data-has-focus="true"] .about-board-grid {
+  filter: blur(9px);
+  opacity: 0.58;
+}
+
+.about-board[data-has-focus="true"] .about-item:not([data-focused="true"]) {
+  opacity: 0.52;
+  filter: blur(9px) saturate(0.88);
+}
+
+.about-item[data-focused="true"] {
+  opacity: 1 !important;
+  filter: none !important;
+  z-index: 25;
+  isolation: isolate;
+}
+
+/* Intro / emoji tile: slight UI elevation when focused */
+.about-item[data-focused="true"] .about-card,
+.about-item[data-focused="true"] .about-object-btn {
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.26), 0 2px 0 rgba(0, 0, 0, 0.05);
+  outline: 1px solid rgba(0, 0, 0, 0.18);
+  outline-offset: 3px;
+}
+
+.about-item[data-focused="true"] .about-card,
+.about-item[data-focused="true"] .about-object-btn {
+  transform: translateY(-5px) rotate(-0.8deg);
+}
+
+/* PNG / sticker / polaroid: no visible wrapper frame — lift + depth via image drop-shadow only */
+.about-item[data-focused="true"] .about-asset-hit {
+  outline: none;
+  box-shadow: none;
+}
+
+.about-item[data-focused="true"] .about-asset-img {
+  filter: drop-shadow(0 18px 40px rgba(15, 23, 42, 0.4));
+}
+
+.about-item[data-focused="true"] .about-asset-hit--sticker {
+  transform: translateY(-6px) rotate(-1.2deg) scale(1.02);
+}
+
+.about-item[data-focused="true"] .about-asset-hit--polaroid {
+  transform: translateY(-6px) rotate(-3.2deg) scale(1.02);
+}
+
+/* Stacked photos — one board item; all layers stay inside focused branch (crisp, no blur) */
+.about-photo-stack {
+  overflow: visible;
+}
+
+.about-photo-stack__root {
+  position: relative;
+  overflow: visible;
+}
+
+.about-photo-stack__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.about-photo-stack__layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 50% 40%;
+  pointer-events: none;
+}
+
+.about-photo-stack__img {
+  display: block;
+  width: var(--photo-stack-img-w, 118px);
+  max-width: var(--photo-stack-img-w, 118px);
+  height: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  vertical-align: top;
+}
+
+.about-item--interactive:not([data-focused="true"]):hover .about-photo-stack__root {
+  transform: translateY(-7px) rotate(-1deg);
+  transition: transform 0.18s ease, filter 0.18s ease;
+  filter: drop-shadow(0 14px 28px rgba(15, 23, 42, 0.2));
+}
+
+.about-item[data-focused="true"] .about-photo-stack__root {
+  transform: translateY(-6px) rotate(-0.7deg);
+  transition: transform 0.22s ease;
+}
+
+.about-item[data-focused="true"] .about-photo-stack__img {
+  filter: drop-shadow(0 16px 36px rgba(15, 23, 42, 0.38));
+}
+
+/* Clickable items: hover lift */
+.about-item--interactive:not([data-focused="true"]):hover .about-object-btn {
+  transform: translateY(-6px) rotate(-0.9deg);
+  box-shadow: 0 22px 52px rgba(15, 23, 42, 0.22), 0 2px 0 rgba(0, 0, 0, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.about-item--interactive:not([data-focused="true"]):hover .about-asset-hit--sticker {
+  transform: translateY(-6px) rotate(-1.1deg) scale(1.02);
+  transition: transform 0.18s ease;
+}
+
+.about-item--interactive:not([data-focused="true"]):hover .about-asset-hit--polaroid {
+  transform: translateY(-6px) rotate(-3.4deg) scale(1.02);
+  transition: transform 0.18s ease;
+}
+
+.about-item--interactive:not([data-focused="true"]):hover .about-asset-img {
+  filter: drop-shadow(0 14px 32px rgba(15, 23, 42, 0.28));
+  transition: filter 0.18s ease;
+}
+
+.about-item--noninteractive {
+  pointer-events: none;
+}
+
+/* Focus annotation: text only, no card — sits above board; light halo for legibility on blur */
+.about-focus-annotation {
+  position: relative;
+  z-index: 50;
+  overflow: auto;
+  padding: 4px 36px 8px 4px;
+  user-select: text;
+  -webkit-user-select: text;
+  color: rgba(18, 18, 18, 0.94);
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.9),
+    0 0 28px rgba(255, 255, 255, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.85);
+  pointer-events: auto;
+}
+
+.about-focus-annotation__close {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  margin: 0;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  font-size: 1.65rem;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+}
+
+.about-focus-annotation__close:hover {
+  color: rgba(0, 0, 0, 0.72);
+}
+
+.about-focus-annotation__close:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.about-focus-annotation__category {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+  opacity: 0.5;
+}
+
+.about-focus-annotation__title {
+  font-family: "Caveat", cursive;
+  font-size: clamp(1.85rem, 4.2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.12;
+  margin: 0 0 8px;
+  color: rgba(12, 12, 12, 0.94);
+}
+
+.about-focus-annotation__lead {
+  font-family: "Inter", sans-serif;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  margin: 0 0 10px;
+  color: rgba(28, 28, 28, 0.88);
+}
+
+.about-focus-annotation__body {
+  font-family: "Inter", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.58;
+  color: rgba(28, 28, 28, 0.86);
+}
+
+.about-focus-annotation__body p {
+  margin: 0 0 8px;
+}
+
+.about-focus-annotation__body-line {
+  font-family: "Inter", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.58;
+  margin: 0;
+  color: rgba(28, 28, 28, 0.86);
+}
+
+.about-focus-annotation__list {
+  font-family: "Inter", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 1.15rem;
+  color: rgba(28, 28, 28, 0.86);
+}
+
+.about-focus-annotation__list li {
+  margin-bottom: 4px;
+}
+
+.about-focus-annotation__link {
+  color: rgba(12, 80, 160, 0.92);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.about-focus-annotation__link:hover {
+  color: rgba(8, 55, 120, 0.98);
+}
+
+/* Invisible hit targets for PNG assets — only the pixels show */
+.about-asset-hit {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+  box-shadow: none;
+  border-radius: 0;
+  transition: transform 0.15s ease;
+}
+
+.about-asset-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  border: none;
+  border-radius: 0;
+  vertical-align: top;
+}
+
+.about-asset-img--sticker {
+  max-width: 140px;
+}
+
+.about-asset-img--polaroid {
+  max-width: 200px;
+  max-height: min(52vh, 420px);
+}
+
+.about-asset-hit--polaroid {
+  transform: rotate(-2.5deg);
+}
+
+.about-asset-hit:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 4px;
+}
+
+/* Grid is part of the board (moves with it) */
+.about-board-grid {
+  position: absolute;
+  inset: 0;
+  background-color: #f7f7f7;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.055) 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
+}
+
+/* Items are positioned in board coordinates */
+.about-item {
+  position: absolute;
+}
+
+.about-card {
+  width: min(420px, calc(100vw - 48px));
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10), 0 2px 0 rgba(0, 0, 0, 0.04);
+  padding: 16px 18px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.about-card h1 {
+  font-family: "Inter", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.about-card p {
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.75);
+  margin-bottom: 10px;
+}
+
+.about-card ul {
+  padding-left: 18px;
+  font-family: "Inter", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.72);
+}
+
+.about-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.about-object-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 86px;
+  height: 86px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.90);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 0 rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  font-size: 2rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.about-object-btn:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.about-object-popover {
+  margin-top: 10px;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: "Inter", sans-serif;
+  font-size: 0.92rem;
+  color: rgba(0, 0, 0, 0.78);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+}
+
+/* ── Mobile About: board-inspired grid, static scroll, editorial polish ─ */
+.about.about--layout-mobile {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #f5f5f6;
+  /* Match desktop board grid; slightly clearer lines, fixed cell size */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.068) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.068) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+
+.mobile-about {
+  --mobile-space-xs: 0.5rem;
+  --mobile-space-sm: 0.75rem;
+  --mobile-space-md: 1.25rem;
+  --mobile-space-lg: 1.75rem;
+  --mobile-space-xl: 2.5rem;
+  --mobile-space-2xl: 3.25rem;
+  --mobile-copy: rgba(28, 28, 28, 0.82);
+  --mobile-copy-muted: rgba(28, 28, 28, 0.62);
+  --mobile-hero-max: 300px;
+
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 36rem;
+  margin: 0 auto;
+  padding:
+    max(1.75rem, 6vw)
+    max(1.35rem, 5.5vw)
+    max(3.5rem, 10vw);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.62;
+  color: #121212;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mobile-about__intro {
+  margin-bottom: var(--mobile-space-2xl);
+  padding-bottom: var(--mobile-space-xl);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.075);
+}
+
+.mobile-about__chip {
+  display: inline-flex;
+  margin: 0 0 var(--mobile-space-md);
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+/* Page title: serif editorial (Instrument Serif loads from root layout) */
+.mobile-about__h1 {
+  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 7vw, 2.45rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.12;
+  margin: 0 0 var(--mobile-space-md);
+  letter-spacing: -0.02em;
+  color: #0a0a0a;
+}
+
+.mobile-about__intro-p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--mobile-copy);
+  max-width: 36em;
+}
+
+.mobile-about-section {
+  margin-bottom: var(--mobile-space-2xl);
+}
+
+.mobile-about-section:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Section label: mono, distinct from titles and body */
+.mobile-about-section__title {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.38);
+  margin: 0 0 var(--mobile-space-md);
+  padding-bottom: var(--mobile-space-sm);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.mobile-about-section__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mobile-about-item {
+  margin: 0;
+  padding: var(--mobile-space-xl) 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.055);
+}
+
+.mobile-about-section__items .mobile-about-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Hero: centred in column, calm frame */
+.mobile-about-item__media {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto var(--mobile-space-lg);
+  width: 100%;
+  max-width: var(--mobile-hero-max);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 12px 40px rgba(15, 23, 42, 0.06);
+}
+
+.mobile-about-item__media--emoji {
+  min-height: 5.5rem;
+  max-height: none;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+}
+
+.mobile-about-item__emoji-only {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.mobile-about-item__img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 240px;
+  margin-inline: auto;
+  object-fit: contain;
+  object-position: center;
+  vertical-align: top;
+}
+
+/* Item title: serif, clearly above body */
+.mobile-about-item__title {
+  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.2;
+  color: #0a0a0a;
+  margin: 0 auto var(--mobile-space-sm);
+  letter-spacing: -0.015em;
+  text-align: center;
+  max-width: 22rem;
+}
+
+.mobile-about-item__copy {
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--mobile-copy);
+  max-width: 34rem;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.mobile-about__lead {
+  font-size: 0.875rem;
+  line-height: 1.62;
+  font-weight: 500;
+  margin: 0 0 var(--mobile-space-sm);
+  color: var(--mobile-copy);
+}
+
+.mobile-about__body {
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--mobile-copy);
+}
+
+.mobile-about__body p {
+  margin: 0 0 var(--mobile-space-xs);
+}
+
+.mobile-about__body p:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-about__body-line {
+  font-size: 0.875rem;
+  line-height: 1.62;
+  margin: 0 0 var(--mobile-space-sm);
+  color: var(--mobile-copy);
+}
+
+.mobile-about__list {
+  margin: 0 0 var(--mobile-space-sm);
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--mobile-copy);
+}
+
+.mobile-about__list li {
+  margin-bottom: 0.35rem;
+}
+
+.mobile-about__list li:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-about__link {
+  color: rgba(12, 80, 160, 0.95);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  word-break: break-word;
+}
+

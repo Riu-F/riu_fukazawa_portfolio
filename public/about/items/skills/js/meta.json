@@ -1,0 +1,9 @@
+{
+  "id": "js",
+  "category": "craft",
+  "title": "JS",
+  "kind": "emoji",
+  "description": "Building interactive experiences with clean mechanics.",
+  "detailBody": "TypeScript, React, and motion-heavy UI — this site included. Final copy can replace this stub.",
+  "emoji": "⌨️"
+}

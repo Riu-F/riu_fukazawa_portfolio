@@ -99,8 +99,8 @@ const PERSONAS: PersonaData[] = [
       {
         icon:    'train',
         label:   'Getting Around',
-        summary: 'Suica cards, child fares, and family-friendly dining including halal options.',
-        tag:     'Practical',
+        summary: 'Suica cards, child fares, halal dining, and family convenience store tips.',
+        tag:     'Family tip',
         expanded: [
           {
             heading: 'Transport',
@@ -134,7 +134,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'train',
         label:   'Airport to City',
         summary: 'JR Haruka Express, IC card setup, and the quickest route into Kyoto.',
-        tag:     'Arrival',
+        tag:     'Getting there',
         expanded: [
           {
             heading: 'From Kansai (KIX)',
@@ -158,7 +158,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'map',
         label:   'April Rhythm',
         summary: 'Beat the crowds at Fushimi Inari, Arashiyama, and Higashiyama — plus the best coffee.',
-        tag:     'Discovery',
+        tag:     'Golden hour',
         expanded: [
           {
             heading: 'Timing',
@@ -184,7 +184,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'compass',
         label:   'Pack Smart',
         summary: 'April layering guide, waterproofing, and photography restrictions to know.',
-        tag:     'Practical',
+        tag:     'Gear & rules',
         expanded: [
           {
             heading: 'What to bring',
@@ -220,7 +220,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'car',
         label:   'Arriving with Ease',
         summary: 'Pre-booked chauffeur, official taxi fares, and the easiest route from CDG.',
-        tag:     'Arrival',
+        tag:     'Premium',
         expanded: [
           {
             heading: 'Recommended options',
@@ -244,7 +244,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'star',
         label:   'Art & Gardens',
         summary: "Timed entries for the Louvre and Musée d'Orsay, plus the most beautiful walks.",
-        tag:     'Must-see',
+        tag:     'Curated',
         expanded: [
           {
             heading: 'Book in advance',
@@ -269,7 +269,7 @@ const PERSONAS: PersonaData[] = [
         icon:    'food',
         label:   'Dining & Daily Life',
         summary: 'September weather, reservation tips, and lunch tasting menus for best value.',
-        tag:     'Lifestyle',
+        tag:     'Fine dining',
         expanded: [
           {
             heading: 'September in Paris',
@@ -357,92 +357,111 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
         borderRadius: 9,
         border:       `1px solid ${isExpanded ? '#e0e0e0' : 'transparent'}`,
         cursor:       'pointer',
-        transition:   'border-color 200ms ease, background 200ms ease',
+        transition:   'border-color 220ms ease, background 220ms ease, box-shadow 220ms ease',
+        boxShadow:    isExpanded ? '0 2px 12px rgba(0,0,0,0.05)' : 'none',
       }}
     >
-      {/* Collapsed header — always visible */}
-      <div style={{ padding: '12px 12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Header — always visible */}
+      <div style={{ padding: '12px 12px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+
+        {/* Icon + title + chevron row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
             <div style={{
               width: 26, height: 26, borderRadius: 6,
               background:  isExpanded ? '#2a2a2a' : '#fff',
               display:     'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink:  0, transition: 'background 200ms ease',
+              flexShrink:  0, transition: 'background 220ms ease',
             }}>
               <Icon name={card.icon} size={13} stroke={isExpanded ? '#fff' : '#666'} />
             </div>
             <span style={{
               fontFamily: "'Outfit', sans-serif",
-              fontSize: 13.5, fontWeight: 500, color: '#111', lineHeight: 1.2,
+              fontSize: 13.5, fontWeight: 500, color: '#111', lineHeight: 1.25,
             }}>
               {card.label}
             </span>
           </div>
           <div style={{
             transform:  isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 250ms ease',
-            flexShrink: 0, marginTop: 2,
+            transition: 'transform 260ms ease',
+            flexShrink: 0, marginTop: 3,
           }}>
-            <Icon name="chevron" size={14} stroke="#aaa" />
+            <Icon name="chevron" size={13} stroke={isExpanded ? '#888' : '#bbb'} />
           </div>
         </div>
 
+        {/* Summary — hidden when expanded to avoid redundancy with detail content */}
         {!isExpanded && (
-          <span style={{ fontSize: 12, fontWeight: 300, color: '#666', lineHeight: 1.45 }}>
+          <span style={{ fontSize: 12, fontWeight: 400, color: '#555', lineHeight: 1.5 }}>
             {card.summary}
           </span>
         )}
 
+        {/* Tag */}
         <span style={{
           display:       'inline-block',
           fontFamily:    "'DM Mono', monospace",
-          fontSize:      9, fontWeight: 500, letterSpacing: '0.4px',
-          textTransform: 'uppercase', color: '#888',
+          fontSize:      9, fontWeight: 500, letterSpacing: '0.5px',
+          textTransform: 'uppercase', color: isExpanded ? '#666' : '#888',
           background:    isExpanded ? '#f0f0f0' : '#ebebeb',
-          padding:       '2px 7px', borderRadius: 4,
-          alignSelf:     'flex-start', transition: 'background 200ms ease',
+          padding:       '2px 8px', borderRadius: 4,
+          alignSelf:     'flex-start', transition: 'background 220ms ease, color 220ms ease',
         }}>
           {card.tag}
         </span>
       </div>
 
-      {/* Expanded content — animates open/closed */}
+      {/* Expanded detail — animates open/closed via grid trick */}
       <div style={{
-        display: 'grid',
+        display:          'grid',
         gridTemplateRows: isExpanded ? '1fr' : '0fr',
-        transition: 'grid-template-rows 300ms ease',
+        transition:       'grid-template-rows 280ms ease',
       }}>
         <div style={{ overflow: 'hidden', minHeight: 0 }}>
-          <div style={{ padding: '0 12px 14px', borderTop: '1px solid #ebebeb' }}>
+          <div style={{ padding: '0 12px 16px', borderTop: '1px solid #ebebeb' }}>
             {card.expanded.map((section, si) => (
-              <div key={si} style={{ marginTop: 12 }}>
+              <div
+                key={si}
+                style={{
+                  marginTop:   si === 0 ? 14 : 0,
+                  paddingTop:  si > 0   ? 12 : 0,
+                  borderTop:   si > 0   ? '1px solid #f3f3f3' : 'none',
+                }}
+              >
+                {/* Section label */}
                 <div style={{
                   fontFamily:    "'DM Mono', monospace",
-                  fontSize:      9.5, fontWeight: 500, letterSpacing: '0.7px',
-                  textTransform: 'uppercase', color: '#aaa', marginBottom: 6,
+                  fontSize:      9, fontWeight: 500, letterSpacing: '0.8px',
+                  textTransform: 'uppercase', color: '#bbb', marginBottom: 7,
                 }}>
                   {section.heading}
                 </div>
+
+                {/* Bullets */}
                 {section.bullets && (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {section.bullets.map((b, bi) => (
                       <li key={bi} style={{
-                        fontSize: 12, lineHeight: 1.55, color: '#444',
-                        paddingLeft: '1rem', position: 'relative', marginBottom: 4,
+                        fontSize: 12, lineHeight: 1.6, color: '#3a3a3a',
+                        paddingLeft: '1.1rem', position: 'relative',
+                        marginBottom: bi < section.bullets!.length - 1 ? 5 : 0,
                       }}>
-                        <span style={{ position: 'absolute', left: 0, color: '#ccc' }}>–</span>
+                        <span style={{ position: 'absolute', left: 0, color: '#ccc', userSelect: 'none' }}>–</span>
                         {b}
                       </li>
                     ))}
                   </ul>
                 )}
+
+                {/* Tip callout */}
                 {section.tip && (
                   <div style={{
-                    marginTop: 8, padding: '7px 10px',
-                    background: '#fafafa', borderRadius: 6,
-                    borderLeft: '2px solid #d4d4d4',
-                    fontSize: 11.5, color: '#666', lineHeight: 1.5, fontStyle: 'italic',
+                    marginTop:   9, padding: '8px 11px',
+                    background:  '#f8f8fc', borderRadius: 6,
+                    borderLeft:  '2px solid #c8c4e0',
+                    fontSize:    11.5, color: '#555', lineHeight: 1.55,
+                    fontStyle:   'italic',
                   }}>
                     {section.tip}
                   </div>
@@ -458,23 +477,19 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
 
 /* ── Main component ─────────────────────────────────────────────── */
 export default function AiCheckoutPrototype() {
-  const [activeIdx, setActiveIdx]         = useState(0);
-  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [activeIdx, setActiveIdx]     = useState(0);
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   const persona = PERSONAS[activeIdx];
 
   function handlePersonaChange(idx: number) {
     if (idx === activeIdx) return;
     setActiveIdx(idx);
-    setExpandedCards(new Set());
+    setExpandedCard(null);
   }
 
   function toggleCard(cardIdx: number) {
-    setExpandedCards(prev => {
-      const next = new Set(prev);
-      if (next.has(cardIdx)) next.delete(cardIdx); else next.add(cardIdx);
-      return next;
-    });
+    setExpandedCard(prev => prev === cardIdx ? null : cardIdx);
   }
 
   return (
@@ -483,7 +498,7 @@ export default function AiCheckoutPrototype() {
       padding: '20px 24px 24px',
       fontFamily: "'DM Sans', system-ui, sans-serif",
       WebkitFontSmoothing: 'antialiased',
-      gap: 16,
+      gap: 14,
     }}>
 
       {/* ── Persona selector ──────────────────────────────────────── */}
@@ -500,13 +515,14 @@ export default function AiCheckoutPrototype() {
               role="tab"
               aria-selected={isActive}
               onClick={() => handlePersonaChange(i)}
+              className="aip-proto-persona-btn"
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px',
                 background:   isActive ? '#fff' : '#fafafa',
                 border:       `1px solid ${isActive ? '#b8b8b8' : '#e4e4e4'}`,
                 borderRadius: 10, cursor: 'pointer', userSelect: 'none',
-                transition:   'border-color 220ms ease-out, background 220ms ease-out, box-shadow 220ms ease-out',
+                transition:   'border-color 200ms ease, background 200ms ease, box-shadow 200ms ease',
                 boxShadow:    isActive
                   ? '0 2px 8px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.04), 0 3px 12px rgba(180,140,240,0.11), 0 3px 12px rgba(130,200,220,0.09)'
                   : 'none',
@@ -521,9 +537,7 @@ export default function AiCheckoutPrototype() {
                 }}>
                   {p.name}
                 </span>
-                <span style={{
-                  fontSize: 10.5, fontWeight: 400, color: '#999', letterSpacing: '0.1px',
-                }}>
+                <span style={{ fontSize: 10.5, fontWeight: 400, color: '#999', letterSpacing: '0.1px' }}>
                   {p.traits}
                 </span>
               </div>
@@ -562,12 +576,12 @@ export default function AiCheckoutPrototype() {
         <div className="ai-output-separator" />
 
         {/* Output body */}
-        <div style={{ padding: '20px 20px 24px' }}>
+        <div style={{ padding: '22px 22px 26px' }}>
 
           {/* Success indicator + heading */}
           <div style={{
-            textAlign: 'center', marginBottom: 16,
-            paddingBottom: 16, borderBottom: '1px solid #f0f0f0',
+            textAlign: 'center', marginBottom: 18,
+            paddingBottom: 18, borderBottom: '1px solid #f0f0f0',
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: '50%', background: '#2a2a2a',
@@ -579,13 +593,13 @@ export default function AiCheckoutPrototype() {
             <h3 style={{
               fontFamily:    "'Outfit', sans-serif",
               fontSize:      20, fontWeight: 500, letterSpacing: '-0.3px',
-              marginBottom:  5, color: '#111',
+              marginBottom:  6, color: '#111',
             }}>
               {persona.heading}
             </h3>
             <p style={{
               fontSize: 13.5, fontWeight: 300, color: '#555',
-              lineHeight: 1.5, maxWidth: 420, margin: '0 auto',
+              lineHeight: 1.55, maxWidth: 420, margin: '0 auto',
             }}>
               {persona.sub}
             </p>
@@ -593,20 +607,27 @@ export default function AiCheckoutPrototype() {
 
           {/* Trip strip */}
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap',
-            padding: '9px 16px', background: '#f7f7f7', borderRadius: 8, marginBottom: 16,
+            display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap',
+            background: '#f7f7f7', borderRadius: 8, marginBottom: 18, overflow: 'hidden',
           }}>
             {[
               { label: 'Destination', value: persona.trip.destination },
               { label: 'Dates',       value: persona.trip.dates       },
               { label: 'Travellers',  value: persona.trip.travellers  },
               { label: 'Length',      value: persona.trip.nights      },
-            ].map(item => (
-              <div key={item.label} style={{ textAlign: 'center' }}>
+            ].map((item, idx, arr) => (
+              <div
+                key={item.label}
+                style={{
+                  textAlign: 'center', padding: '9px 20px',
+                  borderRight: idx < arr.length - 1 ? '1px solid #ebebeb' : 'none',
+                  flex: '1 1 auto',
+                }}
+              >
                 <div style={{
                   fontFamily:    "'DM Mono', monospace",
-                  fontSize:      9.5, fontWeight: 500, textTransform: 'uppercase',
-                  letterSpacing: '0.9px', color: '#aaa', marginBottom: 3,
+                  fontSize:      9, fontWeight: 500, textTransform: 'uppercase',
+                  letterSpacing: '0.9px', color: '#aaa', marginBottom: 4,
                 }}>
                   {item.label}
                 </div>
@@ -620,11 +641,11 @@ export default function AiCheckoutPrototype() {
             ))}
           </div>
 
-          {/* Next steps label */}
+          {/* Section label */}
           <div style={{
             fontFamily:    "'DM Mono', monospace",
-            fontSize:      10, fontWeight: 500, textTransform: 'uppercase',
-            letterSpacing: '1px', color: '#aaa', marginBottom: 10,
+            fontSize:      9.5, fontWeight: 500, textTransform: 'uppercase',
+            letterSpacing: '1px', color: '#bbb', marginBottom: 10,
           }}>
             Recommended next steps
           </div>
@@ -635,7 +656,7 @@ export default function AiCheckoutPrototype() {
               <ExpandableCard
                 key={`${persona.id}-${ci}`}
                 card={card}
-                isExpanded={expandedCards.has(ci)}
+                isExpanded={expandedCard === ci}
                 onToggle={() => toggleCard(ci)}
               />
             ))}
@@ -643,7 +664,7 @@ export default function AiCheckoutPrototype() {
 
           {/* Footer note */}
           <p style={{
-            marginTop:  16, fontSize: 11, color: '#ccc', textAlign: 'center',
+            marginTop:  18, fontSize: 10.5, color: '#ccc', textAlign: 'center',
             fontFamily: "'DM Mono', monospace", letterSpacing: '0.3px',
           }}>
             Content generated by AI · Based on known traveller data

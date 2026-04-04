@@ -1,0 +1,15 @@
+{
+  "items": [
+    { "id": "intro", "type": "instructionCard", "x": 3800, "y": 2280 },
+    { "id": "cooking", "x": 3200, "y": 1980 },
+    { "id": "running", "x": 2880, "y": 2620 },
+    { "id": "hiking", "x": 3520, "y": 2680 },
+    { "id": "scuba", "x": 4180, "y": 2550 },
+    { "id": "beach", "x": 4520, "y": 2180 },
+    { "id": "plants", "x": 2650, "y": 2180 },
+    { "id": "travel", "x": 4850, "y": 2480 },
+    { "id": "photography", "x": 5120, "y": 1980 },
+    { "id": "js", "x": 4380, "y": 1820 },
+    { "id": "suede", "x": 4050, "y": 1820 }
+  ]
+}

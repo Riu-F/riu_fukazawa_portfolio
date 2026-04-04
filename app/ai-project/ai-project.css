@@ -1520,12 +1520,16 @@
   }
 }
 
-/* ── AiCheckoutPrototype — rec card grid ──────────────────────── */
+/* ── AiCheckoutPrototype ──────────────────────────────────────── */
 .aip .aip-proto-rec-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   align-items: start;
+}
+.aip .aip-proto-persona-btn:not([aria-selected="true"]):hover {
+  border-color: #d0d0d0 !important;
+  background:   #fff    !important;
 }
 @media (max-width: 640px) {
   .aip .aip-proto-rec-grid {
