@@ -17,10 +17,23 @@ export default function MobileAboutItem({ item }: { item: BoardItem }) {
   const hero = firstVisibleImage(item);
 
   if (item.type === "placeholderObject") {
+    const fb = item.boardFallback ?? "emoji";
+    const showTitleMedia = fb === "title";
     return (
       <article className="mobile-about-item">
-        <div className="mobile-about-item__media mobile-about-item__media--emoji" aria-hidden>
-          <span className="mobile-about-item__emoji-only">{item.placeholderEmoji ?? "◆"}</span>
+        <div
+          className={
+            showTitleMedia
+              ? "mobile-about-item__media mobile-about-item__media--fallback-title"
+              : "mobile-about-item__media mobile-about-item__media--emoji"
+          }
+          aria-hidden
+        >
+          {showTitleMedia ? (
+            <span className="mobile-about-item__fallback-title">{title}</span>
+          ) : (
+            <span className="mobile-about-item__emoji-only">{item.placeholderEmoji ?? "◆"}</span>
+          )}
         </div>
         <h3 className="mobile-about-item__title">{title}</h3>
         <div className="mobile-about-item__copy">

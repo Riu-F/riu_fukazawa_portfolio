@@ -112,14 +112,16 @@
 
 /* Intro / emoji tile: slight UI elevation when focused */
 .about-item[data-focused="true"] .about-card,
-.about-item[data-focused="true"] .about-object-btn {
+.about-item[data-focused="true"] .about-object-btn,
+.about-item[data-focused="true"] .about-board-fallback-btn {
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.26), 0 2px 0 rgba(0, 0, 0, 0.05);
   outline: 1px solid rgba(0, 0, 0, 0.18);
   outline-offset: 3px;
 }
 
 .about-item[data-focused="true"] .about-card,
-.about-item[data-focused="true"] .about-object-btn {
+.about-item[data-focused="true"] .about-object-btn,
+.about-item[data-focused="true"] .about-board-fallback-btn {
   transform: translateY(-5px) rotate(-0.8deg);
 }
 
@@ -194,7 +196,8 @@
 }
 
 /* Clickable items: hover lift */
-.about-item--interactive:not([data-focused="true"]):hover .about-object-btn {
+.about-item--interactive:not([data-focused="true"]):hover .about-object-btn,
+.about-item--interactive:not([data-focused="true"]):hover .about-board-fallback-btn {
   transform: translateY(-6px) rotate(-0.9deg);
   box-shadow: 0 22px 52px rgba(15, 23, 42, 0.22), 0 2px 0 rgba(0, 0, 0, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -389,6 +392,41 @@
   position: absolute;
 }
 
+/* Hover-aside: tiny “internal commentary” (desktop board only). */
+.about-hover-aside {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -10px) rotate(-1.2deg);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 30;
+
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(12, 12, 12, 0.52);
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 1px 0 rgba(255, 255, 255, 0.85);
+
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.about-item--interactive:hover .about-hover-aside {
+  opacity: 1;
+  transform: translate(-50%, -22px) rotate(-1.2deg);
+}
+
+/* Keep focus mode clean: the annotation is the main text layer. */
+.about-item[data-focused="true"] .about-hover-aside {
+  opacity: 0 !important;
+}
+
 .about-card {
   width: min(420px, calc(100vw - 48px));
   background: rgba(255, 255, 255, 0.92);
@@ -453,6 +491,39 @@
 }
 
 .about-object-btn:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+/* Temporary board tile when an item has copy but no `visible/` images yet */
+.about-board-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(220px, calc(100vw - 48px));
+  min-height: 52px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1), 0 2px 0 rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.about-board-fallback-btn__label {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.25;
+  text-align: center;
+  color: rgba(18, 18, 18, 0.78);
+  word-break: break-word;
+}
+
+.about-board-fallback-btn:focus-visible {
   outline: 2px solid #111;
   outline-offset: 2px;
 }
@@ -615,6 +686,26 @@
 .mobile-about-item__emoji-only {
   font-size: 3rem;
   line-height: 1;
+}
+
+.mobile-about-item__media--fallback-title {
+  min-height: 5.5rem;
+  max-height: none;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+}
+
+.mobile-about-item__fallback-title {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.35;
+  color: rgba(18, 18, 18, 0.72);
+  padding: 0 0.75rem;
 }
 
 .mobile-about-item__img {

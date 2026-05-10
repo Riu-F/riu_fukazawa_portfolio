@@ -39,9 +39,32 @@ Hydration note: the layout branch is chosen with `matchMedia` after mount, so th
 | `public/about/items/**/meta.json` | Copy, category, `kind`, optional `stackPresentation` |
 | `public/about/items/**/visible/` | Images on the board (see patterns below) |
 | `public/about/items/**/revealed/` | Extra images that appear when the item is **focused** |
-| `public/about/placeholder.svg` | Fallback asset when a folder has no images yet |
+| `public/about/placeholder.svg` | Legacy asset (stacks no longer inject it when `visible/` is empty) |
 
 Optional `focusZoom` in JSON may remain for future use; **focus does not move or zoom the camera**.
+
+## Image priority vs emoji / title fallback
+
+- Loader scans `visible/` for image files (extensions are matched **case-insensitively**: `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, etc.).
+- **If one or more real images exist:** the item is always a **stack / sticker stack** (or upgraded from `kind: "emoji"` when images were added) — **images win**; the board never shows the emoji tile for that item.
+- **If `visible/` is empty:** the board shows a **temporary title chip** (`boardFallback: "title"`) when `title` is set in `meta.json`, otherwise the legacy **emoji** tile. Adding images to `visible/` later switches to the image stack automatically — no code change.
+
+## Visible vs revealed stacks (no duplicate `src`)
+
+- **`visible/`** images are listed once in `stackVisibleImages` (resting board uses these only).
+- **`revealed/`** images are listed in `revealedImages` and are **only** layered when the stack is **focused** (expanded); they are never copied into `visible` automatically.
+- If the same path appears in both folders (or duplicated in data), **`lib/dedupeStackImages.ts`** removes repeats while preserving order; **`revealed`** entries that match a **`visible`** `src` are dropped so expanded mode does not show the same file twice.
+- Items with **one** visible file and **no** revealed files render **one** layer (no padding with duplicate URLs).
+
+## Resting photo stack offset
+
+- Resting (unfocused) offsets for stacked `visible/` layers live in `components/photoStackLayout.ts` (`REST` + `layoutRestingForSize`).
+- Horizontal separation is intentionally **stronger than vertical** so roughly **~30%** of the card underneath reads at a glance; focused/spread layout is unchanged (`layoutExpandedForSize`).
+
+## Board placement (`board-layout.json`)
+
+- **Desktop board:** every tile needs an entry in `public/about/board-layout.json` (`id` + `x` / `y`). Folders + `meta.json` alone do **not** place items on the canvas.
+- **Media:** drop files into `visible/` / `revealed/` and the loader picks them up on the next build — **no manual wiring** per file.
 
 ## Item `kind` → board behaviour
 
@@ -123,6 +146,11 @@ Implementation: `hooks/useBoardCamera.ts` — pointer-anchored zoom, clamped cam
 
 - Only **interactive** items (`.about-item--interactive`) get a stronger hover: extra lift, slight rotation, and stronger drop shadow. The intro card is non-interactive and does not use this.
 - Focused items keep a stronger elevated state.
+- Items can optionally define a **hover-only aside phrase** via `"hoverAside"` in `public/about/items/**/meta.json`. This is **desktop-board-only** for now and should be used **sparingly** (a few items max) so it stays a quiet reward and not UI clutter.
+
+## `kind: "emoji"` + images
+
+- If `meta.json` still says `"kind": "emoji"` but `visible/` contains images (e.g. after migrating content), the loader **upgrades** the item to a **sticker-style stack** so the bitmap shows instead of the emoji.
 
 ## Annotation copy
 
@@ -135,6 +163,7 @@ Implementation: `hooks/useBoardCamera.ts` — pointer-anchored zoom, clamped cam
 | Concern | Location |
 |--------|----------|
 | Load JSON + folders | `lib/loadBoardItems.ts` |
+| De-dupe stack `src` lists | `lib/dedupeStackImages.ts` |
 | Group items for mobile sections | `lib/groupAboutItemsForMobile.ts` |
 | First visible image for mobile hero | `lib/mobileAboutHero.ts` |
 | Intro copy (desktop + mobile) | `content/aboutIntroContent.tsx` |
@@ -150,4 +179,4 @@ Implementation: `hooks/useBoardCamera.ts` — pointer-anchored zoom, clamped cam
 
 ## Current layout ids (`board-layout.json`)
 
-`intro`, `cooking`, `running`, `hiking`, `scuba`, `beach`, `plants`, `travel`, `photography`, `js`, `suede`.
+`intro`, `cooking`, `running`, `hiking`, `scuba`, `beach`, `plants`, `travel`, `photography`, `js`, `suede`, `reading`, `magazines`, `dyslexia`, `youtube`, `movies`, `games`, `minecraft`, `robotics`, `fashion`, `anime`, `background`, `school`, `pottery`, `outdoors`, `sylvester`, `figma`, `illustrator`, `after-effects`, `lightroom-photoshop`, `premiere-pro-video`, `webflow`, `python`, `usu`, `university`.

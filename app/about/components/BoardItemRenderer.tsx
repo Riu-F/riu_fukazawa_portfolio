@@ -5,6 +5,15 @@ import { isBoardItemInteractive } from "../types";
 import { AboutIntroBody, AboutIntroChip, AboutIntroHeading } from "../content/aboutIntroContent";
 import PhotoStackBoardItem from "./PhotoStackBoardItem";
 
+function HoverAside({ text }: { text: string | undefined }) {
+  if (!text) return null;
+  return (
+    <div className="about-hover-aside" aria-hidden="true">
+      {text}
+    </div>
+  );
+}
+
 export default function BoardItemRenderer(params: {
   item: BoardItem;
   focused: boolean;
@@ -36,6 +45,8 @@ export default function BoardItemRenderer(params: {
 
   if (item.type === "placeholderObject") {
     const interactive = isBoardItemInteractive(item);
+    const fallback = item.boardFallback ?? "emoji";
+    const showTitleFallback = fallback === "title";
     return (
       <div
         ref={(el) => {
@@ -48,17 +59,23 @@ export default function BoardItemRenderer(params: {
         }
         data-board-item={interactive ? "true" : undefined}
         data-focused={focused ? "true" : "false"}
+        data-board-fallback={showTitleFallback ? "title" : "emoji"}
         style={{ left: item.x, top: item.y }}
       >
         <button
           type="button"
-          className="about-object-btn"
+          className={showTitleFallback ? "about-board-fallback-btn" : "about-object-btn"}
           aria-pressed={focused}
           disabled={!interactive}
           onClick={() => interactive && onFocus(item.id)}
         >
-          {item.placeholderEmoji ?? "◆"}
+          {showTitleFallback ? (
+            <span className="about-board-fallback-btn__label">{item.title ?? item.id}</span>
+          ) : (
+            (item.placeholderEmoji ?? "◆")
+          )}
         </button>
+        {interactive ? <HoverAside text={item.hoverAside} /> : null}
       </div>
     );
   }
@@ -101,6 +118,7 @@ export default function BoardItemRenderer(params: {
             draggable={false}
           />
         </button>
+        <HoverAside text={item.hoverAside} />
       </div>
     );
   }

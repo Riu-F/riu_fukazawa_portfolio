@@ -1,8 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
 import type { BoardItem, BoardItemType, BoardStackImage } from "../types";
+import { dedupeStackImagesPreserveOrder, mergeVisibleAndRevealedStacks } from "./dedupeStackImages";
 
-const IMAGE_EXT = /\.(png|jpe?g|webp|gif|svg)$/i;
+/** Case-insensitive match for common raster/vector extensions */
+const IMAGE_EXT = /\.(png|jpe?g|webp|gif|svg|bmp|avif)$/i;
 
 type LayoutEntry = {
   id: string;
@@ -29,6 +31,7 @@ type MetaJson = {
   title?: string;
   description?: string;
   detailBody?: string;
+  hoverAside?: string;
   kind?: MetaKind;
   emoji?: string;
   /** Override auto-detected presentation for stack kinds */
@@ -72,24 +75,11 @@ async function listImageUrls(itemDir: string, sub: "visible" | "revealed"): Prom
 }
 
 function toStackImages(urls: string[]): BoardStackImage[] {
-  return urls.map((src) => ({ src, alt: "" }));
-}
-
-function ensureMinStack(urls: string[], min: number): string[] {
-  if (urls.length === 0) return Array.from({ length: min }, () => "/about/placeholder.svg");
-  if (urls.length >= min) return urls;
-  const out = [...urls];
-  let i = 0;
-  while (out.length < min) {
-    out.push(urls[i % urls.length]);
-    i++;
-  }
-  return out;
+  return dedupeStackImagesPreserveOrder(urls.map((src) => ({ src, alt: "" })));
 }
 
 function boardTypeFromKind(
   kind: MetaKind,
-  visibleCount: number,
   meta: MetaJson,
 ): { type: BoardItemType; stackPresentation?: "stack" | "sticker" | "polaroid" } {
   if (kind === "emoji") return { type: "placeholderObject" };
@@ -105,7 +95,6 @@ function boardTypeFromKind(
       stackPresentation: meta.stackPresentation ?? "polaroid",
     };
   }
-  // stackReveal
   return {
     type: "photoStackObject",
     stackPresentation: meta.stackPresentation ?? "stack",
@@ -122,6 +111,29 @@ async function readMetaMap(itemsRoot: string): Promise<Map<string, { dir: string
     map.set(meta.id, { dir: path.dirname(file), meta });
   }
   return map;
+}
+
+function pushTitleOrEmojiPlaceholder(
+  out: BoardItem[],
+  meta: MetaJson,
+  entry: LayoutEntry,
+): void {
+  const hasTitle = Boolean(meta.title?.trim());
+  out.push({
+    id: meta.id,
+    type: "placeholderObject",
+    x: entry.x,
+    y: entry.y,
+    title: meta.title,
+    category: meta.category,
+    description: meta.description,
+    detailBody: meta.detailBody,
+    hoverAside: meta.hoverAside,
+    boardFallback: hasTitle ? "title" : "emoji",
+    placeholderEmoji: meta.emoji ?? "◆",
+    focusZoom: meta.focusZoom ?? entry.focusZoom ?? 1.12,
+    interactive: meta.interactive !== false,
+  });
 }
 
 export async function loadAboutBoardItems(): Promise<BoardItem[]> {
@@ -155,36 +167,30 @@ export async function loadAboutBoardItems(): Promise<BoardItem[]> {
     }
 
     const { dir, meta } = resolved;
-    const kind: MetaKind = meta.kind ?? "stackReveal";
+    const declaredKind: MetaKind = meta.kind ?? "stackReveal";
 
-    if (kind === "emoji") {
-      out.push({
-        id: meta.id,
-        type: "placeholderObject",
-        x: entry.x,
-        y: entry.y,
-        title: meta.title,
-        category: meta.category,
-        description: meta.description,
-        detailBody: meta.detailBody,
-        placeholderEmoji: meta.emoji ?? "✨",
-        focusZoom: meta.focusZoom ?? entry.focusZoom ?? 1.12,
-        interactive: meta.interactive !== false,
-      });
+    const rawVisible = await listImageUrls(dir, "visible");
+    const revealed = await listImageUrls(dir, "revealed");
+
+    /** Image-first: declared `emoji` still becomes a stack when real files exist in `visible/`. */
+    let effectiveKind: MetaKind = declaredKind;
+    if (declaredKind === "emoji" && rawVisible.length > 0) {
+      effectiveKind = "stickerReveal";
+    }
+
+    if (rawVisible.length === 0) {
+      pushTitleOrEmojiPlaceholder(out, meta, entry);
       continue;
     }
 
-    let visible = await listImageUrls(dir, "visible");
-    const revealed = await listImageUrls(dir, "revealed");
+    const visibleImagesBase = toStackImages(rawVisible);
+    const revealedImagesBase = toStackImages(revealed);
+    const { visible: visibleImages, revealed: revealedImages } = mergeVisibleAndRevealedStacks(
+      visibleImagesBase,
+      revealedImagesBase,
+    );
 
-    const minVisible =
-      kind === "polaroidStackReveal" || kind === "stackReveal" ? 2 : 1;
-    visible = ensureMinStack(visible, minVisible);
-
-    const { type, stackPresentation } = boardTypeFromKind(kind, visible.length, meta);
-
-    const visibleImages = toStackImages(visible);
-    const revealedImages = toStackImages(revealed);
+    const { type, stackPresentation } = boardTypeFromKind(effectiveKind, meta);
 
     let framingSize: { width: number; height: number } | undefined;
     if (stackPresentation === "sticker") {
@@ -204,6 +210,7 @@ export async function loadAboutBoardItems(): Promise<BoardItem[]> {
       category: meta.category,
       description: meta.description,
       detailBody: meta.detailBody,
+      hoverAside: meta.hoverAside,
       stackVisibleImages: visibleImages,
       revealedImages,
       stackPresentation,

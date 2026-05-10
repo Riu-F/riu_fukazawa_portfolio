@@ -11,12 +11,17 @@ export const PHOTO_STACK_TRANSITION_MS = 380;
 
 const PAD = 18;
 
+/**
+ * Resting stack offsets in **base** coordinates for `IMG_W` × `IMG_H`.
+ * Horizontal step ≈ 28% of card width so ~30% of the card underneath stays visible;
+ * vertical offsets stay modest so the pile reads as mostly horizontal drift.
+ */
 const REST: PhotoStackTransform[] = [
   { x: 0, y: 0, deg: -0.6 },
-  { x: 14, y: 12, deg: -2.4 },
-  { x: 26, y: 22, deg: 1.9 },
-  { x: 38, y: 32, deg: -1.7 },
-  { x: 50, y: 42, deg: 2.3 },
+  { x: 66, y: 10, deg: -2.4 },
+  { x: 132, y: 18, deg: 1.9 },
+  { x: 198, y: 26, deg: -1.7 },
+  { x: 264, y: 34, deg: 2.3 },
 ];
 
 function expandRawForFan(fan: number): PhotoStackTransform[] {
@@ -71,7 +76,14 @@ export function layoutForTransforms(
 }
 
 export function layoutRestingForSize(visibleCount: number, imgW: number, imgH: number) {
-  const raw = Array.from({ length: visibleCount }, (_, i) => restTransform(i));
+  const raw = Array.from({ length: visibleCount }, (_, i) => {
+    const t = restTransform(i);
+    return {
+      x: (t.x * imgW) / IMG_W,
+      y: (t.y * imgH) / IMG_H,
+      deg: t.deg,
+    };
+  });
   return layoutForTransforms(raw, imgW, imgH, PAD);
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { BoardItem } from "../types";
+import { mergeVisibleAndRevealedStacks } from "../lib/dedupeStackImages";
 import {
   IMG_H,
   IMG_W,
@@ -18,13 +19,16 @@ const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 function resolveStackImages(item: BoardItem): {
   visible: { src: string; alt?: string }[];
   revealed: { src: string; alt?: string }[];
+  layers: { src: string; alt?: string }[];
 } {
   const hasSplit = item.stackVisibleImages != null;
-  const visible = hasSplit
+  const visibleRaw = hasSplit
     ? (item.stackVisibleImages ?? [])
     : (item.stackImages ?? []);
-  const revealed = hasSplit ? (item.revealedImages ?? []) : [];
-  return { visible, revealed };
+  const revealedRaw = hasSplit ? (item.revealedImages ?? []) : [];
+  const { visible, revealed } = mergeVisibleAndRevealedStacks(visibleRaw, revealedRaw);
+  const layers = [...visible, ...revealed];
+  return { visible, revealed, layers };
 }
 
 function stackDims(item: BoardItem): { w: number; h: number } {
@@ -41,8 +45,7 @@ export default function PhotoStackBoardItem(params: {
   registerItemEl: (id: string, el: HTMLDivElement | null) => void;
 }) {
   const { item, focused, onFocus, registerItemEl } = params;
-  const { visible, revealed } = resolveStackImages(item);
-  const layers = [...visible, ...revealed];
+  const { visible, layers } = resolveStackImages(item);
   if (layers.length === 0) return null;
 
   const visibleCount = visible.length;
@@ -71,6 +74,11 @@ export default function PhotoStackBoardItem(params: {
       }}
       onClick={() => onFocus(item.id)}
     >
+      {item.hoverAside ? (
+        <div className="about-hover-aside" aria-hidden="true">
+          {item.hoverAside}
+        </div>
+      ) : null}
       <div
         className="about-photo-stack__root"
         style={{
@@ -101,7 +109,7 @@ export default function PhotoStackBoardItem(params: {
 
             return (
               <div
-                key={im.src}
+                key={`${item.id}__${i}__${im.src}`}
                 className="about-photo-stack__layer"
                 data-layer={i}
                 aria-hidden={isRevealedOnly && !focused ? true : undefined}

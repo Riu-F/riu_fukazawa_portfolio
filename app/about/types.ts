@@ -26,7 +26,14 @@ export type BoardItem = {
   focusZoom?: number;
   framingSize?: { width: number; height: number };
   detailBody?: string;
+  /** Optional hover-only aside phrase (desktop board only). */
+  hoverAside?: string;
   placeholderEmoji?: string;
+  /**
+   * When `type` is `placeholderObject`: how to render on the board with no images.
+   * `title` = small editorial title chip; `emoji` = legacy emoji tile (last resort).
+   */
+  boardFallback?: "title" | "emoji";
 };
 
 export function isBoardItemInteractive(item: BoardItem): boolean {
