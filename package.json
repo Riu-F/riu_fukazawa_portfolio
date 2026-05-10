@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build:foodhub": "npm --prefix app/super-market-navigation/supermarket_app run build",
+    "build": "npm run build:foodhub && next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.94.0",
     "gsap": "^3.14.2",
     "next": "16.1.7",
     "react": "19.2.3",
