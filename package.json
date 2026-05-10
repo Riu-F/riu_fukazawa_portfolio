@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:foodhub": "npm --prefix app/super-market-navigation/supermarket_app run build",
+    "build:foodhub": "npm --prefix app/super-market-navigation/supermarket_app ci --no-audit --no-fund && npm --prefix app/super-market-navigation/supermarket_app run build",
     "build": "npm run build:foodhub && next build",
     "start": "next start",
     "lint": "eslint"
