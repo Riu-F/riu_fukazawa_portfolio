@@ -158,6 +158,94 @@ body {
   color: #111;
 }
 
+/* ── SITE FOOTER (reusable, dark-purple identity) ───────────────────── */
+.site-footer {
+  background: #2d1b5e;
+  color:      rgba(255, 255, 255, 0.92);
+  padding:    clamp(3.25rem, 7vw, 5.5rem) 0;
+}
+
+.site-footer__container {
+  max-width: 960px;
+  margin:    0 auto;
+  padding:   0 2rem;
+  display:   flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.site-footer__name {
+  margin-bottom: 0.75rem;
+}
+
+/* Reuse the exact cycling wordmark, but restyle for footer context */
+.site-footer .title.site-footer__wordmark {
+  color: #fff;
+  line-height: 0.9;
+}
+
+.site-footer__tagline {
+  margin:      0 0 1.5rem;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size:   clamp(1.05rem, 0.6rem + 1vw, 1.25rem);
+  font-weight: 400;
+  color:       rgba(255, 255, 255, 0.78);
+}
+
+.site-footer__links {
+  display:     flex;
+  flex-wrap:   wrap;
+  align-items: center;
+  gap:         0.85rem;
+  font-family: 'Inter', sans-serif;
+  font-size:   1rem;
+}
+
+.site-footer__sep {
+  opacity: 0.55;
+}
+
+.site-footer__link {
+  color:           rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  position:        relative;
+  transition:      color 0.2s ease;
+}
+
+.site-footer__link::after {
+  content: '';
+  position: absolute;
+  left:     0;
+  bottom:  -0.15rem;
+  width:    100%;
+  height:   2px;
+  background: #7c4dbd;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s ease;
+  opacity: 0.9;
+}
+
+.site-footer__link:hover {
+  color: #7c4dbd;
+}
+
+.site-footer__link:hover::after {
+  transform: scaleX(1);
+}
+
+.site-footer__link:focus-visible {
+  outline:        2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 3px;
+  border-radius:  6px;
+}
+
+@media (max-width: 479px) {
+  .site-footer__container {
+    padding: 0 1.25rem;
+  }
+}
+
 /* ── STICKY CARDS ────────────────────────────────────────────────── */
 /*
   Named .sticky-card (not .sticky) to avoid collision with
@@ -231,6 +319,23 @@ body {
   line-height: 1.6;
 }
 
+/* ── ABOUT HOVER CHIP ────────────────────────────────────────────── */
+/*
+  Animated gradient shimmer for the "About me →" tooltip that follows
+  the cursor while hovering over the sticky note / paperclip photo.
+  The chip itself is rendered (and positioned) by HoverAboutTooltip.tsx;
+  this rule just animates its background position so the colours drift.
+*/
+@keyframes aboutChipShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.about-hover-chip {
+  animation: aboutChipShimmer 4s ease infinite;
+}
+
 /* ── DECK TAB HOVER ──────────────────────────────────────────────── */
 /*
   The deck uses inline styles throughout (matching the demo source).
@@ -269,19 +374,276 @@ body {
 }
 
 .aip-nav-bar a {
+  display:         inline-block;
   color:           #555;
   text-decoration: none;
   font-weight:     500;
-  transition:      color 0.18s;
+  transform-origin: center;
+  transition:      color 0.18s ease, transform 0.18s ease;
 }
 
-.aip-nav-bar a:hover { color: #111; }
+.aip-nav-bar a:hover {
+  color:     #111;
+  transform: scale(1.04);
+}
+
+.aip-nav-bar a:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 2px;
+  border-radius:  6px;
+}
+
 .aip-nav-bar a.current { color: #111; font-weight: 700; }
 
 .aip-nav-bar .nav-divider {
   width:      1px;
   height:     14px;
   background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+/* ── Desktop folder dropdowns (≥ 769px) ─────────────────────────── */
+.aip-nav-dd {
+  position:   relative;
+  display:    inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.aip-nav-dd--open {
+  z-index: 5;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             0.2rem;
+  margin:          0;
+  padding:         0.2rem 0.45rem 0.25rem;
+  border:          none;
+  border-radius:   8px;
+  background:      transparent;
+  font-family:     inherit;
+  font-size:       inherit;
+  font-weight:     500;
+  color:           #555;
+  cursor:          pointer;
+  transition:      color 0.18s, box-shadow 0.22s, background 0.22s, transform 0.18s;
+  white-space:     nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger {
+  transform-origin: center;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger:hover {
+  color:     #111;
+  transform: scale(1.04);
+}
+
+/* Don't scale the open trigger — keeps the panel anchor stable */
+.aip-nav-dd--open .aip-nav-dd__trigger {
+  transform: none !important;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 2px;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger.current {
+  color:       #111;
+  font-weight: 700;
+}
+
+/* Projects trigger — neutral light gradient rim when open/hover */
+.aip-nav-dd__trigger--projects:hover,
+.aip-nav-dd--projects.aip-nav-dd--open .aip-nav-dd__trigger--projects {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(244,244,246,0.92) 100%) padding-box,
+    linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.04)) border-box;
+  border: 1.5px solid transparent;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+.aip-nav-dd--projects.aip-nav-dd--open .aip-nav-dd__trigger--projects,
+.aip-nav-dd__trigger--projects.current {
+  color: #111;
+}
+
+/* Contact trigger — sticky-note yellow accent */
+.aip-nav-dd__trigger--contact:hover,
+.aip-nav-dd--contact.aip-nav-dd--open .aip-nav-dd__trigger--contact {
+  background: linear-gradient(180deg, rgba(255, 249, 196, 0.95) 0%, rgba(255, 230, 129, 0.55) 100%);
+  box-shadow: inset 0 -1px 0 rgba(180, 150, 40, 0.2);
+}
+
+.aip-nav-dd__trigger::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.15rem;
+  border-left:   3.5px solid transparent;
+  border-right:  3.5px solid transparent;
+  border-top:    4px solid currentColor;
+  opacity:       0.45;
+  transform:     translateY(1px);
+  transition:    transform 0.2s ease, opacity 0.2s ease;
+}
+
+.aip-nav-dd--open .aip-nav-dd__trigger::after {
+  transform: translateY(1px) rotate(-180deg);
+  opacity:   0.65;
+}
+
+/* Layered folder panel */
+.aip-nav-dd__panel {
+  position:       absolute;
+  left:           50%;
+  top:            calc(100% + 0.45rem);
+  z-index:        20;
+  min-width:      13.5rem;
+  transform:      translateX(-50%) translateY(-6px);
+  opacity:        0;
+  visibility:     hidden;
+  pointer-events: none;
+  transition:
+    opacity       0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    transform     0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility    0s linear 0.22s;
+}
+
+/* Invisible bridge so pointer doesn’t leave hover zone between trigger & panel */
+.aip-nav-dd__panel::before {
+  content:    '';
+  position:   absolute;
+  bottom:     100%;
+  left:       8%;
+  right:      8%;
+  height:     12px;
+}
+
+.aip-nav-dd--open .aip-nav-dd__panel {
+  opacity:        1;
+  visibility:     visible;
+  pointer-events: auto;
+  transform:      translateX(-50%) translateY(0);
+  transition:
+    opacity       0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    transform     0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility    0s linear 0s;
+}
+
+/* Second paper layer (shadow only) */
+.aip-nav-dd__panel::after {
+  content:       '';
+  position:      absolute;
+  left:          6px;
+  right:         -4px;
+  top:           8px;
+  bottom:        -6px;
+  border-radius: 12px;
+  background:    rgba(15, 23, 42, 0.06);
+  z-index:       -1;
+  pointer-events: none;
+}
+
+.aip-nav-dd__panel-inner {
+  position:       relative;
+  display:        flex;
+  flex-direction: column;
+  gap:            0.15rem;
+  padding:        0.65rem 0.55rem 0.75rem;
+  border-radius:  12px;
+  white-space:    normal;
+}
+
+.aip-nav-dd__panel--projects .aip-nav-dd__panel-inner {
+  background:
+    linear-gradient(145deg, #fefcff 0%, #f8f7fc 48%, #f3f1fa 100%);
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 14px 36px rgba(99, 102, 241, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.aip-nav-dd__panel--projects .aip-nav-dd__panel-inner::before {
+  content: '';
+  position: absolute;
+  inset:    0;
+  border-radius: inherit;
+  padding:  1px;
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.35), rgba(96, 165, 250, 0.3), rgba(52, 211, 153, 0.22));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:         linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite:         exclude;
+  pointer-events: none;
+  opacity:        0.55;
+}
+
+.aip-nav-dd__panel--contact .aip-nav-dd__panel-inner {
+  background: linear-gradient(180deg, #fffef5 0%, #fff9c4 38%, #ffe681 100%);
+  border:     1px solid rgba(200, 170, 50, 0.42);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 14px 32px rgba(180, 150, 40, 0.14),
+    0 4px 10px rgba(15, 23, 42, 0.05);
+}
+
+.aip-nav-dd__panel-inner > a {
+  position:        relative;
+  display:         block;
+  padding:         0.45rem 0.65rem;
+  border-radius:   8px;
+  font-weight:     600;
+  font-size:       0.9rem;
+  color:           #1a1a1a;
+  text-decoration: none;
+  transition:      background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Default panel link hover (used for Contact panel links) */
+.aip-nav-dd__panel-inner > a:hover,
+.aip-nav-dd__panel-inner > a:focus-visible {
+  background: rgba(255, 255, 255, 0.65);
+  color:      #000;
+}
+
+/* Accessible Supermarkets — soft purple tint accent */
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--supermarket:hover,
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--supermarket:focus-visible {
+  background: rgba(124, 77, 189, 0.12);
+  color:      #2e1065;
+  box-shadow: inset 3px 0 0 0 #7c4dbd;
+}
+
+/* AI x Design — soft rainbow gradient accent */
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--ai:hover,
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--ai:focus-visible {
+  background: linear-gradient(
+    120deg,
+    rgba(192, 132, 252, 0.18) 0%,
+    rgba(129, 140, 248, 0.18) 35%,
+    rgba(96, 165, 250, 0.16) 65%,
+    rgba(52, 211, 153, 0.16) 100%
+  );
+  color:      #111;
+  box-shadow:
+    inset 0 0 0 1px rgba(129, 140, 248, 0.18);
+}
+
+.aip-nav-dd__panel-inner > a.current {
+  color:       #111;
+  font-weight: 700;
+}
+
+.aip-nav-dd__panel-inner > a:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 1px;
 }
 
 /* Mobile: folder-tab menu (desktop pill hidden) */
@@ -308,13 +670,16 @@ body {
 .aip-nav-mobile-toggle {
   position: fixed;
   z-index:  10002;
-  top:      max(10px, env(safe-area-inset-top, 0px));
-  right:    max(10px, env(safe-area-inset-right, 0px));
-  width:    46px;
-  height:   46px;
+  /* Pushed ~12px down and ~12px in from the corner so the button clears
+     notch / dynamic island areas on common phones. The env() fallback
+     still adds the safe-area inset on top of the base offset. */
+  top:      calc(env(safe-area-inset-top, 0px) + 22px);
+  right:    calc(env(safe-area-inset-right, 0px) + 22px);
+  width:    54px;
+  height:   54px;
   padding:  0;
   border:   none;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.94);
   box-shadow:
     0 2px 0 rgba(0, 0, 0, 0.06),
@@ -340,8 +705,8 @@ body {
 }
 
 .aip-nav-mobile-toggle-bars {
-  width: 20px;
-  height: 14px;
+  width: 24px;
+  height: 17px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -349,18 +714,18 @@ body {
 
 .aip-nav-mobile-toggle-bars span {
   display: block;
-  height: 2px;
+  height: 2.5px;
   width: 100%;
-  border-radius: 1px;
+  border-radius: 1.25px;
   background: #222;
   flex-shrink: 0;
 }
 
 .aip-nav-mobile-toggle-close {
   display: none;
-  width: 22px;
-  height: 22px;
-  font-size: 1.5rem;
+  width: 26px;
+  height: 26px;
+  font-size: 1.75rem;
   line-height: 1;
   font-weight: 300;
   color: #111;
@@ -547,6 +912,12 @@ body {
   color:        #fff;
   border-color: #353233;
   transform:    translateY(-4px);
+}
+
+/* FoodHub / sentence-case CTA (default .deck-btn is uppercase) */
+.deck-btn--sentence {
+  text-transform: none;
+  letter-spacing: 0.02em;
 }
 
 /* AI card CTA — soft rainbow glow around the border */
@@ -799,7 +1170,7 @@ body {
   /* ── Mobile text block: hello-intro only (tagline hidden on mobile) */
   .hero_mobile_text {
     flex-shrink: 0;
-    padding:     0.75rem 1.25rem 0.75rem;
+    padding:     0.75rem 1.25rem 0.5rem;
   }
 
   /* Hide the subtitle on mobile */
@@ -808,45 +1179,334 @@ body {
   }
 
   .hero_mobile_text .hello-intro {
-    font-size:     clamp(3.75rem, 15vw, 6.5rem);
+    font-size:     clamp(2.75rem, 11vw, 4.5rem);
     font-weight:   700;
     margin-bottom: 0;
   }
 
-  /* ── Mobile wordmark container: fills remaining hero height ────── */
+  /*
+    Mobile wordmark container: sits directly under the hello-intro.
+    Content-sized (no flex: 1) so the paperclip photo can sit below it
+    without being pushed off-screen.
+  */
   .hero_mobile_wordmark_wrap {
-    flex:            1;
+    flex:            0 0 auto;
     display:         flex;
     align-items:     center;
     justify-content: center;
+    padding:         0 1.25rem;
     overflow:        hidden;
   }
 
   /*
-    "Riu" as a ROTATED WORDMARK — not writing-mode vertical text.
-    transform: rotate(90deg) turns the whole word on its side so it reads
-    like the desktop title fallen sideways (R at top, u at bottom).
-    font-size: 45vh makes the word's advance width fill ~90% of the
-    available height after rotation.
+    Horizontal "Riu" wordmark — sized to fit cleanly within the mobile
+    viewport. !important needed because TitleSection's JS sets an inline
+    font-size derived from cap-height measurement.
   */
   .hero_mobile_wordmark_wrap .title {
-    display:          inline-block;
-    transform:        rotate(90deg);
-    transform-origin: center center;
-    font-size:        45vh !important;  /* overrides JS inline size */
-    writing-mode:     horizontal-tb;    /* explicitly unset any vertical mode */
-    white-space:      nowrap;
-    line-height:      0.82;
+    display:      inline-block;
+    transform:    none;
+    writing-mode: horizontal-tb;
+    white-space:  nowrap;
+    line-height:  0.9;
+    font-size:    clamp(7rem, 42vw, 15rem) !important;
   }
 
-  /* Mobile home: hide floating photo (paperclip) and sticky note — desktop only */
-  .hero .photo-card-hero,
+  /* Mobile home: hide sticky note only — paperclip photo is repositioned below */
   .hero .sticky-card {
     display: none !important;
+  }
+
+  /*
+    Mobile paperclip photo: flows BELOW the wordmark in the hero flex
+    column. Uses `order: 99` so DOM order (photo is rendered before
+    TitleSection in HomePage) does not affect visual order on mobile.
+    The PhotoCard wrapper is normally position:absolute — overridden
+    here so it participates in flex layout.
+  */
+  .hero .photo-card-hero {
+    position:    static !important;
+    top:         auto !important;
+    right:       auto !important;
+    left:        auto !important;
+    align-self:  center;
+    order:       99;
+    margin:      1.25rem auto 0;
+    width:       max-content;
+    z-index:     5;       /* below mobile menu button (z-index 10002) */
+  }
+
+  /* Constrain the inner image — PhotoCard hard-codes width: 200 inline */
+  .hero .photo-card-hero img {
+    width:     60vw !important;
+    max-width: 280px;
+    height:    auto !important;
   }
 }
 
 /* Small mobile: < 400px */
 @media (max-width: 25rem) {
-  .hero_mobile_wordmark_wrap .title { font-size: 42vh !important; }
+  .hero_mobile_wordmark_wrap .title { font-size: clamp(6rem, 44vw, 12rem) !important; }
+}
+
+/* ── Home deck: project card left accent (4px, case-study-aligned) ───── */
+.deck-card-surface {
+  position: relative;
+}
+
+.deck-card-surface--accent-foodhub::before {
+  content:          '';
+  position:         absolute;
+  left:             0;
+  top:              0;
+  bottom:           0;
+  width:            4px;
+  z-index:          3;
+  pointer-events:   none;
+  border-radius:    16px 0 0 16px;
+  background:       #7c4dbd;
+}
+
+.deck-card-surface--accent-ai::before {
+  content:          '';
+  position:         absolute;
+  left:             0;
+  top:              0;
+  bottom:           0;
+  width:            4px;
+  z-index:          3;
+  pointer-events:   none;
+  border-radius:    16px 0 0 16px;
+  background:       linear-gradient(
+    180deg,
+    #c084fc 0%,
+    #818cf8 22%,
+    #60a5fa 44%,
+    #34d399 58%,
+    #60a5fa 72%,
+    #818cf8 86%,
+    #c084fc 100%
+  );
+}
+
+.deck-card-surface--accent-age::before {
+  content:          '';
+  position:         absolute;
+  left:             0;
+  top:              0;
+  bottom:           0;
+  width:            4px;
+  z-index:          3;
+  pointer-events:   none;
+  border-radius:    16px 0 0 16px;
+  background:       linear-gradient(180deg, #d1d5db 0%, #9ca3af 40%, #6b7280 100%);
+}
+
+/* ── Home deck: FoodHub right panel (hero-intensity purple glow, shared card surface) ─── */
+.deck-foodhub-right-panel {
+  position:        relative;
+  flex:            1;
+  min-width:       0;
+  min-height:      0;
+  display:         flex;
+  flex-direction:  column;
+  align-self:      stretch;
+  align-items:     stretch;
+  padding:         0;
+  background:
+    radial-gradient(ellipse 88% 78% at 50% 46%, rgba(124, 77, 189, 0.17) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 92% at 52% 52%, rgba(124, 77, 189, 0.13) 0%, transparent 58%),
+    radial-gradient(ellipse 62% 56% at 50% 68%, rgba(124, 77, 189, 0.11) 0%, transparent 52%),
+    transparent;
+}
+
+/* ── Home deck: FoodHub mini frame + iframe embed ───────────────────── */
+.deck-foodhub-mini {
+  position:            relative;
+  display:             flex;
+  flex-direction:      column;
+  width:               100%;
+  height:              100%;
+  min-height:          0;
+  isolation:           isolate;
+  overscroll-behavior: contain;
+}
+
+.deck-foodhub-mini__viewport {
+  flex:                1;
+  min-height:          0;
+  display:             flex;
+  flex-direction:      column;
+  width:               100%;
+}
+
+.deck-foodhub-mini__phone-area {
+  flex:                1;
+  min-height:          0;
+  display:             flex;
+  align-items:         center;
+  justify-content:     center;
+  padding-inline:      12px;
+}
+
+.deck-foodhub-mini--compact .deck-foodhub-mini__phone-area {
+  padding-inline: 10px;
+}
+
+.deck-foodhub-mini__slot {
+  position:   relative;
+  overflow:   hidden;
+  flex-shrink: 0;
+}
+
+.deck-foodhub-mini__scale-inner {
+  position: relative;
+  overflow: hidden;
+}
+
+.deck-foodhub-mini__frame {
+  width:     100%;
+  max-width: 400px;
+  filter:
+    drop-shadow(0 26px 44px rgba(15, 23, 42, 0.2))
+    drop-shadow(0 10px 22px rgba(0, 0, 0, 0.12))
+    drop-shadow(0 0 1px rgba(45, 27, 94, 0.35))
+    drop-shadow(0 0 36px rgba(124, 77, 189, 0.22))
+    drop-shadow(0 0 56px rgba(124, 77, 189, 0.14));
+}
+
+.deck-foodhub-mini__bezel {
+  position:      relative;
+  width:         100%;
+  max-width:     378px;
+  margin:        0 auto;
+  padding:       10px 10px 12px;
+  border-radius: 2.5rem;
+  background:    linear-gradient(160deg, #2d1b5e 0%, #1a0f38 55%, #0f0822 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.deck-foodhub-mini__island {
+  position:      absolute;
+  top:           9px;
+  left:          50%;
+  transform:     translateX(-50%);
+  width:         92px;
+  height:        26px;
+  border-radius: 999px;
+  background:    #0a0614;
+  box-shadow:    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  z-index:       2;
+}
+
+.deck-foodhub-mini__screen {
+  position:      relative;
+  margin-top:    7px;
+  border-radius:   2rem;
+  overflow:        hidden;
+  background:    #0a0614;
+  width:           100%;
+  max-width:       354px;
+  height:          720px;
+  margin-left:     auto;
+  margin-right:    auto;
+  overscroll-behavior: contain;
+}
+
+.deck-foodhub-mini__iframe {
+  display:          block;
+  width:            100%;
+  height:           100%;
+  min-height:       0;
+  border:           0;
+  background:       #faf9ff;
+  touch-action:     manipulation;
+  overscroll-behavior: contain;
+}
+
+.deck-foodhub-mini__hint {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  flex-shrink:     0;
+  align-self:      center;
+  margin:          0 20px 16px;
+  padding:         6px 14px 7px;
+  border-radius:   999px;
+  font-family:     'Inter', sans-serif;
+  font-size:       12px;
+  font-weight:     600;
+  letter-spacing:   0.02em;
+  color:           rgba(45, 27, 94, 0.88);
+  background:      rgba(255, 255, 255, 0.9);
+  border:          1px solid rgba(124, 77, 189, 0.22);
+  box-shadow:
+    0 2px 10px rgba(45, 27, 94, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  text-shadow:     0 1px 0 rgba(255, 255, 255, 0.9);
+  transition:      opacity 0.5s ease;
+}
+
+.deck-foodhub-mini--compact .deck-foodhub-mini__hint {
+  margin: 0 14px 14px;
+}
+
+.deck-foodhub-mini__hint--out {
+  opacity: 0;
+}
+
+.deck-foodhub-mini__hint-icon {
+  font-size:   14px;
+  line-height: 1;
+  opacity:     0.95;
+  filter:      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8));
+}
+
+.deck-foodhub-mini__try-label {
+  position:       absolute;
+  left:           50%;
+  top:            42%;
+  transform:      translate(-50%, -50%);
+  z-index:        30;
+  pointer-events: none;
+  padding:        10px 18px;
+  border-radius:    999px;
+  font-family:      'Inter', sans-serif;
+  font-size:        13px;
+  font-weight:      600;
+  color:            rgba(76, 29, 149, 0.95);
+  background:       rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 10px 32px rgba(45, 27, 94, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  animation:        deck-foodhub-try-fade 2s ease forwards;
+}
+
+@keyframes deck-foodhub-try-fade {
+  0% {
+    opacity:   0;
+    transform: translate(-50%, -46%);
+  }
+  10% {
+    opacity:   1;
+    transform: translate(-50%, -50%);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity:   0;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-foodhub-mini__try-label {
+    animation: none;
+    opacity:   0.95;
+  }
 }

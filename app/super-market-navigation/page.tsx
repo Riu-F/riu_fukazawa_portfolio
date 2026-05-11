@@ -16,7 +16,7 @@ import SupermarketUserTesting from './components/SupermarketUserTesting';
 import SupermarketEvaluation from './components/SupermarketEvaluation';
 import SupermarketFeasibilityRoadmap from './components/SupermarketFeasibilityRoadmap';
 import SupermarketCaseStudyClosing from './components/SupermarketCaseStudyClosing';
-import SupermarketFooter from './components/SupermarketFooter';
+import SiteFooter from '../components/SiteFooter';
 
 export const metadata = {
   title: 'Supermarket Navigation — Riu',
@@ -43,7 +43,7 @@ export default function SuperMarketNavigationPage() {
       <SupermarketEvaluation />
       <SupermarketFeasibilityRoadmap />
       <SupermarketCaseStudyClosing />
-      <SupermarketFooter />
+      <SiteFooter />
     </div>
   );
 }

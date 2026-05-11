@@ -1,5 +1,6 @@
 import React, { useEffect, useReducer, useRef } from 'react'
 import { createInitialState, deriveRoute } from './state/appState.js'
+import { createDemoAttractMode } from './demoAttractMode.js'
 import ShoppingList from './screens/ShoppingList.jsx'
 import AddItem from './screens/AddItem.jsx'
 import StoreMap from './screens/StoreMap.jsx'
@@ -173,7 +174,41 @@ function reducer(state, action) {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, null, createInitialState)
+  const stateRef = useRef(state)
+  stateRef.current = state
   const interactionSent = useRef(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('embed') !== 'deck') return undefined
+
+    const demo = createDemoAttractMode({
+      getState: () => stateRef.current,
+      dispatch,
+    })
+
+    const onMessage = (e) => {
+      if (e.data?.type === 'foodhub-demo-visible') {
+        demo.setViewportVisible(Boolean(e.data.visible))
+      }
+      if (e.data?.type === 'foodhub-demo-interrupt') {
+        demo.interrupt()
+      }
+    }
+
+    const onTrustedPointer = (ev) => {
+      if (!ev.isTrusted) return
+      demo.interrupt()
+    }
+
+    window.addEventListener('message', onMessage)
+    window.addEventListener('pointerdown', onTrustedPointer, true)
+    return () => {
+      window.removeEventListener('message', onMessage)
+      window.removeEventListener('pointerdown', onTrustedPointer, true)
+      demo.setViewportVisible(false)
+    }
+  }, [dispatch])
 
   useEffect(() => {
     const onPointerDown = () => {

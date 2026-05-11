@@ -935,19 +935,271 @@
 }
 
 .aip-nav-bar a {
-  color:           #555;
-  text-decoration: none;
-  font-weight:     500;
-  transition:      color 0.18s;
+  display:          inline-block;
+  color:            #555;
+  text-decoration:  none;
+  font-weight:      500;
+  transform-origin: center;
+  transition:       color 0.18s ease, transform 0.18s ease;
 }
 
-.aip-nav-bar a:hover { color: #111; }
+.aip-nav-bar a:hover {
+  color:     #111;
+  transform: scale(1.04);
+}
+
+.aip-nav-bar a:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 2px;
+  border-radius:  6px;
+}
+
 .aip-nav-bar a.current { color: #111; font-weight: 700; }
 
 .aip-nav-bar .nav-divider {
   width:      1px;
   height:     14px;
   background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+/* ── Desktop folder dropdowns — duplicated from globals.css ──────── */
+.aip-nav-dd {
+  position:   relative;
+  display:    inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.aip-nav-dd--open {
+  z-index: 5;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             0.2rem;
+  margin:          0;
+  padding:         0.2rem 0.45rem 0.25rem;
+  border:          none;
+  border-radius:   8px;
+  background:      transparent;
+  font-family:     inherit;
+  font-size:       inherit;
+  font-weight:     500;
+  color:           #555;
+  cursor:          pointer;
+  transition:      color 0.18s, box-shadow 0.22s, background 0.22s, transform 0.18s;
+  white-space:     nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger {
+  transform-origin: center;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger:hover {
+  color:     #111;
+  transform: scale(1.04);
+}
+
+/* Don't scale the open trigger — keeps the panel anchor stable */
+.aip-nav-dd--open .aip-nav-dd__trigger {
+  transform: none !important;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 2px;
+}
+
+.aip-nav-bar .aip-nav-dd__trigger.current {
+  color:       #111;
+  font-weight: 700;
+}
+
+/* Projects trigger — neutral light gradient rim when open/hover */
+.aip-nav-dd__trigger--projects:hover,
+.aip-nav-dd--projects.aip-nav-dd--open .aip-nav-dd__trigger--projects {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(244,244,246,0.92) 100%) padding-box,
+    linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.04)) border-box;
+  border: 1.5px solid transparent;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+.aip-nav-dd--projects.aip-nav-dd--open .aip-nav-dd__trigger--projects,
+.aip-nav-dd__trigger--projects.current {
+  color: #111;
+}
+
+.aip-nav-dd__trigger--contact:hover,
+.aip-nav-dd--contact.aip-nav-dd--open .aip-nav-dd__trigger--contact {
+  background: linear-gradient(180deg, rgba(255, 249, 196, 0.95) 0%, rgba(255, 230, 129, 0.55) 100%);
+  box-shadow: inset 0 -1px 0 rgba(180, 150, 40, 0.2);
+}
+
+.aip-nav-dd__trigger::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.15rem;
+  border-left:   3.5px solid transparent;
+  border-right:  3.5px solid transparent;
+  border-top:    4px solid currentColor;
+  opacity:       0.45;
+  transform:     translateY(1px);
+  transition:    transform 0.2s ease, opacity 0.2s ease;
+}
+
+.aip-nav-dd--open .aip-nav-dd__trigger::after {
+  transform: translateY(1px) rotate(-180deg);
+  opacity:   0.65;
+}
+
+.aip-nav-dd__panel {
+  position:       absolute;
+  left:           50%;
+  top:            calc(100% + 0.45rem);
+  z-index:        20;
+  min-width:      13.5rem;
+  transform:      translateX(-50%) translateY(-6px);
+  opacity:        0;
+  visibility:     hidden;
+  pointer-events: none;
+  transition:
+    opacity       0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    transform     0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility    0s linear 0.22s;
+}
+
+.aip-nav-dd__panel::before {
+  content:    '';
+  position:   absolute;
+  bottom:     100%;
+  left:       8%;
+  right:      8%;
+  height:     12px;
+}
+
+.aip-nav-dd--open .aip-nav-dd__panel {
+  opacity:        1;
+  visibility:     visible;
+  pointer-events: auto;
+  transform:      translateX(-50%) translateY(0);
+  transition:
+    opacity       0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    transform     0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility    0s linear 0s;
+}
+
+.aip-nav-dd__panel::after {
+  content:       '';
+  position:      absolute;
+  left:          6px;
+  right:         -4px;
+  top:           8px;
+  bottom:        -6px;
+  border-radius: 12px;
+  background:    rgba(15, 23, 42, 0.06);
+  z-index:       -1;
+  pointer-events: none;
+}
+
+.aip-nav-dd__panel-inner {
+  position:       relative;
+  display:        flex;
+  flex-direction: column;
+  gap:            0.15rem;
+  padding:        0.65rem 0.55rem 0.75rem;
+  border-radius:  12px;
+  white-space:    normal;
+}
+
+.aip-nav-dd__panel--projects .aip-nav-dd__panel-inner {
+  background:
+    linear-gradient(145deg, #fefcff 0%, #f8f7fc 48%, #f3f1fa 100%);
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 14px 36px rgba(99, 102, 241, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.aip-nav-dd__panel--projects .aip-nav-dd__panel-inner::before {
+  content: '';
+  position: absolute;
+  inset:    0;
+  border-radius: inherit;
+  padding:  1px;
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.35), rgba(96, 165, 250, 0.3), rgba(52, 211, 153, 0.22));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:         linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite:         exclude;
+  pointer-events: none;
+  opacity:        0.55;
+}
+
+.aip-nav-dd__panel--contact .aip-nav-dd__panel-inner {
+  background: linear-gradient(180deg, #fffef5 0%, #fff9c4 38%, #ffe681 100%);
+  border:     1px solid rgba(200, 170, 50, 0.42);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 14px 32px rgba(180, 150, 40, 0.14),
+    0 4px 10px rgba(15, 23, 42, 0.05);
+}
+
+.aip-nav-dd__panel-inner > a {
+  position:        relative;
+  display:         block;
+  padding:         0.45rem 0.65rem;
+  border-radius:   8px;
+  font-weight:     600;
+  font-size:       0.9rem;
+  color:           #1a1a1a;
+  text-decoration: none;
+  transition:      background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Default panel link hover (used for Contact panel links) */
+.aip-nav-dd__panel-inner > a:hover,
+.aip-nav-dd__panel-inner > a:focus-visible {
+  background: rgba(255, 255, 255, 0.65);
+  color:      #000;
+}
+
+/* Accessible Supermarkets — soft purple tint accent */
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--supermarket:hover,
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--supermarket:focus-visible {
+  background: rgba(124, 77, 189, 0.12);
+  color:      #2e1065;
+  box-shadow: inset 3px 0 0 0 #7c4dbd;
+}
+
+/* AI x Design — soft rainbow gradient accent */
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--ai:hover,
+.aip-nav-dd__panel-inner > a.aip-nav-dd__link--ai:focus-visible {
+  background: linear-gradient(
+    120deg,
+    rgba(192, 132, 252, 0.18) 0%,
+    rgba(129, 140, 248, 0.18) 35%,
+    rgba(96, 165, 250, 0.16) 65%,
+    rgba(52, 211, 153, 0.16) 100%
+  );
+  color:      #111;
+  box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.18);
+}
+
+.aip-nav-dd__panel-inner > a.current {
+  color:       #111;
+  font-weight: 700;
+}
+
+.aip-nav-dd__panel-inner > a:focus-visible {
+  outline:        2px solid #111;
+  outline-offset: 1px;
 }
 
 /* ── NUMBERED LIST ────────────────────────────────────────────── */

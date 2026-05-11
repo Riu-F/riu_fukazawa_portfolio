@@ -27,8 +27,59 @@
 */
 
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
-import { DECK_CARDS, type DeckCard } from '../lib/deckData';
+import { DECK_CARDS, type DeckCard, type DeckTag } from '../lib/deckData';
 import AICheckoutDemo from './AICheckoutDemo';
+import DeckFoodHubMini from './DeckFoodHubMini';
+
+/* ── Tag chips — GitHub-style pills mirroring the supermarket case study ── */
+
+const TAG_CONFIG: Record<DeckTag, { emoji: string; label: string; bg: string; color: string }> = {
+  navigation:   { emoji: '🧭', label: 'Navigation',   bg: '#3b82f6', color: '#fff' },
+  distraction:  { emoji: '🧠', label: 'Distraction',  bg: '#ec4899', color: '#fff' },
+  communication: { emoji: '💬', label: 'Communication', bg: '#7c4dbd', color: '#fff' },
+};
+
+function TagChips({ tags, size = 'md' }: { tags: DeckTag[]; size?: 'sm' | 'md' }) {
+  const fontSize = size === 'sm' ? 11 : 12;
+  return (
+    <div
+      style={{
+        display:    'flex',
+        flexWrap:   'wrap',
+        gap:        6,
+        margin:     '0 0 1rem',
+      }}
+    >
+      {tags.map((t) => {
+        const c = TAG_CONFIG[t];
+        return (
+          <span
+            key={t}
+            style={{
+              display:        'inline-flex',
+              alignItems:     'center',
+              gap:            4,
+              padding:        '2px 8px 3px',
+              borderRadius:   999,
+              background:     c.bg,
+              color:          c.color,
+              fontFamily:     "'Inter', sans-serif",
+              fontSize,
+              fontWeight:     500,
+              lineHeight:     1.25,
+              letterSpacing:  '0.02em',
+              boxShadow:      '0 1px 0 rgba(0,0,0,0.06)',
+              whiteSpace:     'nowrap',
+            }}
+          >
+            <span aria-hidden style={{ fontSize: fontSize + 1, lineHeight: 1 }}>{c.emoji}</span>
+            <span>{c.label}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 
@@ -52,16 +103,16 @@ interface TabTheme {
 }
 
 const TAB_THEMES: TabTheme[] = [
-  /* 0 — AI at Checkout: iridescent rainbow gradient */
+  /* 0 — FoodHub: solid supermarket purple */
+  {
+    activeBg:    '#7c4dbd',
+    activeColor: '#faf7ff',
+    activeBorder: 'transparent',
+  },
+  /* 1 — AI at Checkout: iridescent rainbow gradient */
   {
     activeBg:    'linear-gradient(120deg, #c084fc 0%, #818cf8 35%, #60a5fa 65%, #34d399 100%)',
     activeColor: '#fff',
-    activeBorder: 'transparent',
-  },
-  /* 1 — Accessible Design: purple gradient */
-  {
-    activeBg:    'linear-gradient(120deg, #4c1d95 0%, #7c3aed 45%, #c084fc 100%)',
-    activeColor: '#f3e8ff',
     activeBorder: 'transparent',
   },
   /* 2 — Age of AI: grey gradient */
@@ -105,16 +156,18 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
       ~3% bottom clearance. Sticky shell has ~84px vertical padding total
       (top: clamp(0.25rem,1vh,0.75rem) ≈ 4–12px + bottom: 4.5rem = 72px).
       TOTAL_H = TAB_H + (N-1)*STRIP + cardH → solve for cardH.
+      Desktop: taller minimum so the FoodHub phone + hint fit comfortably.
     */
     const computeCardH = () => {
-      /* top ~8px + bottom 1.5rem (24px) ≈ 32px total shell padding */
-      const available = Math.round(0.97 * (window.innerHeight - 32));
-      setCardH(Math.max(400, available - TAB_H - (N - 1) * STRIP));
+      /* Tighter vertical runway so the deck wraps closer to content (phone drives feel). */
+      const available = Math.round(0.92 * (window.innerHeight - 32));
+      const minDeck = isMobile ? 400 : 480;
+      setCardH(Math.max(minDeck, available - TAB_H - (N - 1) * STRIP));
     };
     computeCardH();
     window.addEventListener('resize', computeCardH);
     return () => window.removeEventListener('resize', computeCardH);
-  }, []);
+  }, [isMobile]);
 
   const finishAfter = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -193,30 +246,29 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
     return () => window.removeEventListener('keydown', onKey);
   }, [select]);
 
-  /* ── Mobile flat view — 3 clean stacked cards, no scroll section ─── */
+  /* ── Mobile flat view — clean stacked cards, no scroll section ─── */
   if (isMobile) {
     return (
       <div style={{ padding: '0 1.25rem 4rem' }}>
         {DECK_CARDS.map(card => {
-          const theme   = TAB_THEMES[card.id];
-          const isAI    = card.id === 0;
-          const Wrapper = isAI ? 'a' : 'div';
-          const wrapperProps = isAI
-            ? { href: '/ai-project', style: { display: 'block', textDecoration: 'none', color: 'inherit' } }
+          const theme    = TAB_THEMES[card.id];
+          const hasLink  = Boolean(card.href);
+          const Wrapper  = (hasLink && card.id !== 0 ? 'a' : 'div') as 'a' | 'div';
+          const wrapperProps = hasLink && card.id !== 0
+            ? { href: card.href }
             : {};
           return (
             <Wrapper
               key={card.id}
               {...wrapperProps}
               style={{
-                display:      'block',
-                marginBottom: '1.25rem',
-                borderRadius: 12,
-                overflow:     'hidden',
-                border:       '1px solid #e5e5e5',
+                display:        'block',
+                marginBottom:   '1.25rem',
+                borderRadius:   12,
+                overflow:       'hidden',
+                border:         '1px solid #e5e5e5',
                 textDecoration: 'none',
                 color:          'inherit',
-                ...(isAI ? {} : {}),
               }}
             >
               {/* Folder-style tab notch */}
@@ -259,6 +311,10 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
                 }}>
                   {card.heading}
                 </h2>
+                {/* Optional GitHub-style chips (only on cards that declare tags) */}
+                {card.tags && card.tags.length > 0 && (
+                  <TagChips tags={card.tags} size="sm" />
+                )}
                 {/* Body: matches AiIdea .paragraph-new style */}
                 <p style={{
                   fontFamily: "'Inter', sans-serif",
@@ -270,7 +326,23 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
                 }}>
                   {card.body}
                 </p>
-                {/* No CTA buttons on mobile */}
+
+                {card.id === 0 ? (
+                  <>
+                    <div style={{ marginTop: 18, minHeight: 0 }}>
+                      <DeckFoodHubMini compact />
+                    </div>
+                    {card.href && card.btn ? (
+                      <a
+                        href={card.href}
+                        className={`deck-btn${card.id === 0 ? ' deck-btn--sentence' : ''}`}
+                        style={{ marginTop: 18, display: 'inline-block' }}
+                      >
+                        {card.btn}
+                      </a>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
             </Wrapper>
           );
@@ -374,6 +446,17 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
     ? '0 8px 28px rgba(0,0,0,0.04)'
     : 'none';
 
+  const cardBodyShadow = shadow;
+
+  const cardSurfaceClass = [
+    'deck-card-surface',
+    isFront && card.id === 0 && 'deck-card-surface--accent-foodhub',
+    isFront && card.id === 1 && 'deck-card-surface--accent-ai',
+    isFront && card.id === 2 && 'deck-card-surface--accent-age',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
       style={{
@@ -418,59 +501,66 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
         }}
       >
         <span style={{ opacity: 0.5, fontSize: 10 }}>{card.num}</span>
-        {card.tab}
+        <span>{card.tab}</span>
       </div>
 
       {/* ── Card body ── */}
       <div
+        className={cardSurfaceClass}
         style={{
-          position:     'absolute',
-          inset:        0,
-          background:   bg,
-          border:       `1.5px solid ${bc}`,
-          borderRadius: 18,
-          overflow:     'hidden',
-          boxShadow:    shadow,
-          transition:   'box-shadow 0.4s',
+          position:      'absolute',
+          inset:         0,
+          background:    bg,
+          border:        `1.5px solid ${bc}`,
+          borderRadius:  18,
+          overflow:      'hidden',
+          boxShadow:     cardBodyShadow,
+          transition:    'box-shadow 0.4s',
+          display:       'flex',
+          flexDirection: 'column',
+          minHeight:     0,
         }}
       >
-        {/* Peek label — visible in the exposed strip of each hidden card */}
-        <div style={{
-          padding:       '11px 28px 0',
-          fontFamily:    "'DM Mono', monospace",
-          fontSize:      8,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color:         '#ccc',
-          whiteSpace:    'nowrap',
-        }}>
-          {card.num} — {card.tab}
-        </div>
+        {/* Peek label — only on stacked (non-front) cards; tab already labels the front card */}
+        {!isFront ? (
+          <div style={{
+            flexShrink:    0,
+            padding:       '11px 28px 0',
+            fontFamily:    "'DM Mono', monospace",
+            fontSize:      8,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color:         '#ccc',
+            whiteSpace:    'nowrap',
+          }}>
+            {card.num} — {card.tab}
+          </div>
+        ) : null}
 
         {/* ── Active card content ── */}
         {isFront && (
-          card.id === 0 ? (
+          card.id === 1 ? (
             /* AI project — two-column split: left text / right demo */
             <div style={{
-              position:   'absolute',
-              inset:      0,
-              paddingTop: 22,          /* clear peek label */
-              display:    'flex',
-              opacity:    show ? 1 : 0,
-              transform:  show ? 'translateY(0)' : 'translateY(9px)',
-              transition: 'opacity 0.34s ease, transform 0.34s ease',
-              overflow:   'hidden',
+              flex:         1,
+              minHeight:    0,
+              display:      'flex',
+              alignItems:   'stretch',
+              opacity:      show ? 1 : 0,
+              transform:    show ? 'translateY(0)' : 'translateY(9px)',
+              transition:   'opacity 0.34s ease, transform 0.34s ease',
+              overflow:     'hidden',
             }}>
 
               {/* ── Left: title, subtitle, CTA — AiIdea typography ── */}
               <div style={{
                 width:         '36%',
                 flexShrink:    0,
+                alignSelf:     'stretch',
                 display:       'flex',
                 flexDirection: 'column',
                 justifyContent:'center',
-                padding:       '28px 36px 40px 52px',
-                borderRight:   '1px solid #ebebeb',
+                padding:       '22px 32px 26px 48px',
               }}>
                 {/* Label — mirrors AiIdea .h5 style */}
                 <p style={{
@@ -520,7 +610,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               </div>
 
               {/* ── Right: interactive demo (no header — shown on left) ── */}
-              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', alignSelf: 'stretch' }}>
                 <AICheckoutDemo show={show} hideHeader />
               </div>
 
@@ -528,10 +618,10 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
           ) : (
             /* Other projects — same two-column split as AI card */
             <div style={{
-              position:   'absolute',
-              inset:      0,
-              paddingTop: 22,
+              flex:       1,
+              minHeight:  0,
               display:    'flex',
+              alignItems: 'stretch',
               opacity:    show ? 1 : 0,
               transform:  show ? 'translateY(0)' : 'translateY(9px)',
               transition: 'opacity 0.34s ease, transform 0.34s ease',
@@ -542,11 +632,13 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               <div style={{
                 width:          '36%',
                 flexShrink:     0,
+                alignSelf:      'stretch',
                 display:        'flex',
                 flexDirection:  'column',
                 justifyContent: 'center',
-                padding:        '28px 36px 40px 52px',
-                borderRight:    '1px solid #ebebeb',
+                padding:        card.id === 0
+                  ? '18px 28px 20px 44px'
+                  : '22px 32px 26px 48px',
               }}>
                 {/* Label — mirrors AiIdea .h5 style */}
                 <p style={{
@@ -576,6 +668,11 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
                   {card.heading}
                 </h2>
 
+                {/* Optional GitHub-style chips between heading and body */}
+                {card.tags && card.tags.length > 0 && (
+                  <TagChips tags={card.tags} />
+                )}
+
                 {/* Body — mirrors AiIdea .paragraph-new style */}
                 <p style={{
                   fontFamily: "'Inter', sans-serif",
@@ -588,31 +685,40 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
                   {card.body}
                 </p>
 
-                {card.btn && (
-                  <a href="#" className="deck-btn">
+                {card.btn && card.href && (
+                  <a
+                    href={card.href}
+                    className={`deck-btn${card.id === 0 ? ' deck-btn--sentence' : ''}`}
+                  >
                     {card.btn}
                   </a>
                 )}
               </div>
 
-              {/* ── Right: placeholder until demo is built ── */}
-              <div style={{
-                flex:            1,
-                display:         'flex',
-                alignItems:      'center',
-                justifyContent:  'center',
-                background:      'hsl(0,0%,97%)',
-              }}>
-                <span style={{
-                  fontFamily:    "'DM Mono', monospace",
-                  fontSize:      10,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  color:         '#ccc',
+              {/* ── Right: FoodHub mini (card 0) or placeholder ── */}
+              {card.id === 0 ? (
+                <div className="deck-foodhub-right-panel">
+                  <DeckFoodHubMini />
+                </div>
+              ) : (
+                <div style={{
+                  flex:            1,
+                  display:         'flex',
+                  alignItems:      'center',
+                  justifyContent:  'center',
+                  background:      'hsl(0,0%,97%)',
                 }}>
-                  {card.num} — Coming soon
-                </span>
-              </div>
+                  <span style={{
+                    fontFamily:    "'DM Mono', monospace",
+                    fontSize:      10,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color:         '#ccc',
+                  }}>
+                    {card.num} — Coming soon
+                  </span>
+                </div>
+              )}
 
             </div>
           )

@@ -116,7 +116,9 @@ export default function ShoppingList({ state, dispatch }) {
                   </div>
                   <span className="list-item-price">${item.price?.toFixed(2)}</span>
                   <button
+                    type="button"
                     className="list-item-remove"
+                    data-demo={item.name === 'Baby Spinach' ? 'remove-baby-spinach' : undefined}
                     onClick={() => handleRemoveItem(item.listId)}
                     aria-label={`Remove ${item.name}`}
                   >
@@ -131,7 +133,7 @@ export default function ShoppingList({ state, dispatch }) {
 
       {shoppingList.length > 0 && !clearingItemIds?.size && (
         <div className="screen-footer">
-          <Button variant="primary" fullWidth onClick={handleStartShop}>
+          <Button variant="primary" fullWidth onClick={handleStartShop} data-demo="start-shop">
             Start my shop
           </Button>
           <Button variant="secondary" fullWidth onClick={handleAddItem}>

@@ -22,7 +22,7 @@ export default function AiProjectPage() {
   return (
     <div className="aip">
       <ScrollAnimations />
-      <AiNav current="ai" />
+      <AiNav current="ai-project" />
       <AiHero />
       <AiIdea />
       <AiContext />

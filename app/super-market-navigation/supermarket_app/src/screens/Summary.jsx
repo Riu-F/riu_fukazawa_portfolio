@@ -74,7 +74,12 @@ export default function Summary({ state, dispatch }) {
         <Button variant="primary" fullWidth onClick={() => dispatch({ type: 'BACK_TO_LIST' })}>
           Back to list
         </Button>
-        <Button variant="secondary" fullWidth onClick={() => dispatch({ type: 'START_NEW_SHOP' })}>
+        <Button
+          variant="secondary"
+          fullWidth
+          data-demo="start-new-shop"
+          onClick={() => dispatch({ type: 'START_NEW_SHOP' })}
+        >
           Start a new shop
         </Button>
       </div>

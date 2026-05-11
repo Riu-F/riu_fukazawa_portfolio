@@ -26,12 +26,50 @@ body {
 
 /* ---- App Shell ---- */
 .app-shell {
+  position: relative;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
   padding: 0;
+}
+
+/* Deck embed: ghost-tap ripple overlay (attract mode) */
+.app-shell.foodhub-demo-ripple-on::after {
+  content:          '';
+  position:         absolute;
+  left:             var(--demo-ripple-x, 50%);
+  top:              var(--demo-ripple-y, 50%);
+  width:            44px;
+  height:           44px;
+  margin-left:      -22px;
+  margin-top:       -22px;
+  border-radius:    50%;
+  pointer-events:   none;
+  z-index:          10000;
+  background:       rgba(124, 77, 189, 0.36);
+  animation:        foodhubDemoRipple 0.58s ease-out forwards;
+}
+
+@keyframes foodhubDemoRipple {
+  0% {
+    transform:  scale(0.55);
+    opacity:    1;
+    box-shadow: 0 0 0 0 rgba(124, 77, 189, 0.5);
+  }
+  100% {
+    transform:  scale(2.75);
+    opacity:    0;
+    box-shadow: 0 0 0 28px rgba(124, 77, 189, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell.foodhub-demo-ripple-on::after {
+    animation: none;
+    opacity:   0.45;
+  }
 }
 
 .app-viewport {
