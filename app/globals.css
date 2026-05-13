@@ -160,28 +160,40 @@ body {
 
 /* ── SITE FOOTER (reusable, dark-purple identity) ───────────────────── */
 .site-footer {
-  background: #2d1b5e;
-  color:      rgba(255, 255, 255, 0.92);
-  padding:    clamp(3.25rem, 7vw, 5.5rem) 0;
+  background:   #2d1b5e;
+  color:        rgba(255, 255, 255, 0.92);
+  padding:      clamp(3.25rem, 7vw, 5.5rem) 0;
+  width:        100%;
+  max-width:    100%;
+  box-sizing:   border-box;
+  overflow-x:   clip;
 }
 
 .site-footer__container {
-  max-width: 960px;
-  margin:    0 auto;
-  padding:   0 2rem;
-  display:   flex;
+  max-width:     min(960px, 100%);
+  width:         100%;
+  margin:        0 auto;
+  padding:       0 2rem;
+  box-sizing:    border-box;
+  display:       flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items:   flex-start;
+  min-width:     0;
 }
 
 .site-footer__name {
   margin-bottom: 0.75rem;
+  max-width:     100%;
+  min-width:     0;
 }
 
 /* Reuse the exact cycling wordmark, but restyle for footer context */
 .site-footer .title.site-footer__wordmark {
-  color: #fff;
+  color:       #fff;
   line-height: 0.9;
+  max-width:   100%;
+  /* Tames the global .title 68vh default before JS measures (avoids mobile overflow flash) */
+  font-size:   clamp(2rem, min(11vw, 9vh), 4.5rem);
 }
 
 .site-footer__tagline {
@@ -765,14 +777,19 @@ body {
   right: 0;
   bottom: 0;
   z-index: 10001;
-  max-height: 50vh;
+  max-height: 70vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: stretch;
   padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
-  transform: translateY(100%);
+  /*
+    Pushed an extra 60px past 100% so the topmost folder tab + its top
+    shadow stay fully below the viewport edge when the menu is closed —
+    nothing peeks through.
+  */
+  transform: translateY(calc(100% + 60px));
   transition: transform 0.44s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -781,20 +798,23 @@ body {
   transform: translateY(0);
 }
 
+/*
+  Layered folder stack — each folder's coloured background tucks under
+  the next one via negative margin. Text inside .aip-folder-sheet is
+  anchored to the top (sheet padding-top + folder tab), so increasing
+  padding-bottom only extends the colour, not text placement.
+  z-index ascends so each folder sits in front of the one above it.
+*/
 .aip-folder {
   position: relative;
   flex: 0 0 auto;
-  margin-bottom: -6px;
+  margin-bottom: -22px;
 }
 
-.aip-folder--projects {
-  z-index: 1;
-}
-
-.aip-folder--contact {
-  z-index: 2;
-  margin-bottom: 0;
-}
+.aip-folder--home     { z-index: 1; }
+.aip-folder--about    { z-index: 2; }
+.aip-folder--projects { z-index: 3; }
+.aip-folder--contact  { z-index: 4; margin-bottom: 0; }
 
 .aip-folder-tab {
   display: inline-block;
@@ -811,10 +831,24 @@ body {
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.aip-folder--projects .aip-folder-tab {
+.aip-folder--home .aip-folder-tab {
   background: #e8e4dc;
   color: #3d3a35;
   border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+}
+
+.aip-folder--about .aip-folder-tab {
+  background: linear-gradient(180deg, #e6efe5 0%, #d6e4d4 100%);
+  color: #2f4435;
+  border: 1px solid rgba(60, 100, 70, 0.22);
+  border-bottom: none;
+}
+
+.aip-folder--projects .aip-folder-tab {
+  background: linear-gradient(180deg, #ece3f4 0%, #d8c9ea 100%);
+  color: #3b2664;
+  border: 1px solid rgba(124, 77, 189, 0.28);
   border-bottom: none;
 }
 
@@ -827,16 +861,30 @@ body {
 
 .aip-folder-sheet {
   border-radius: 0 14px 0 0;
-  padding: 1rem 1.15rem 1.35rem;
+  /* Larger padding-bottom = colour extends well below the text so the
+     tucked-under portion is visibly coloured, not just an empty stub. */
+  padding: 1rem 1.15rem 2.1rem;
   box-shadow:
     0 -6px 0 rgba(0, 0, 0, 0.04),
     0 -12px 32px rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
-.aip-folder-sheet--projects {
-  background: linear-gradient(180deg, #f3efe6 0%, #ebe6dc 100%);
+.aip-folder-sheet--home {
+  background: linear-gradient(180deg, #f5f1e8 0%, #ece5d6 100%);
   border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+}
+
+.aip-folder-sheet--about {
+  background: linear-gradient(180deg, #eef4ec 0%, #dde9da 100%);
+  border: 1px solid rgba(60, 100, 70, 0.22);
+  border-bottom: none;
+}
+
+.aip-folder-sheet--projects {
+  background: linear-gradient(180deg, #f3eef9 0%, #e5d6f1 100%);
+  border: 1px solid rgba(124, 77, 189, 0.28);
   border-bottom: none;
 }
 
@@ -867,6 +915,10 @@ body {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.aip-folder-sheet--home .aip-folder-list a:hover,
+.aip-folder-sheet--home .aip-folder-list a:focus-visible,
+.aip-folder-sheet--about .aip-folder-list a:hover,
+.aip-folder-sheet--about .aip-folder-list a:focus-visible,
 .aip-folder-sheet--projects .aip-folder-list a:hover,
 .aip-folder-sheet--projects .aip-folder-list a:focus-visible {
   background: rgba(255, 255, 255, 0.55);

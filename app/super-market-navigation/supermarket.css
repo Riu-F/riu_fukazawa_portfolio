@@ -8,6 +8,10 @@
   --smp-accent: #7c4dbd;
   --smp-accent-dark: #2d1b5e;
   --smp-accent-soft: rgba(124, 77, 189, 0.16);
+  /* Prevent stray wide children (e.g. measured wordmarks) from causing horizontal scroll */
+  max-width:   100%;
+  overflow-x:  clip;
+  box-sizing:  border-box;
 }
 
 /* Research insight tags (inline pills, colour-coded to the three core insights) */

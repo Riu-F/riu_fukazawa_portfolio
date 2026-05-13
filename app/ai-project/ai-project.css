@@ -1773,10 +1773,9 @@
 }
 
 /* ── AiCheckoutPrototype ──────────────────────────────────────── */
-.aip .aip-proto-rec-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+.aip .aip-proto-cards-row {
+  display:     flex;
+  gap:         8px;
   align-items: start;
 }
 .aip .aip-proto-persona-btn:not([aria-selected="true"]):hover {
@@ -1784,7 +1783,11 @@
   background:   #fff    !important;
 }
 @media (max-width: 640px) {
-  .aip .aip-proto-rec-grid {
-    grid-template-columns: 1fr;
+  .aip .aip-proto-cards-row {
+    flex-direction: column;
+  }
+  .aip .aip-proto-cards-row > div {
+    flex-grow: 1 !important;
+    width:     100%;
   }
 }

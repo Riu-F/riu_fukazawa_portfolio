@@ -1,13 +1,27 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import CyclingWordmark from './CyclingWordmark';
 
 export default function SiteFooter() {
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const q = () => setNarrow(window.innerWidth < 640);
+    q();
+    window.addEventListener('resize', q);
+    return () => window.removeEventListener('resize', q);
+  }, []);
+
   return (
     <footer className="site-footer" aria-label="Footer">
       <div className="site-footer__container">
         <div className="site-footer__name" aria-label="Riu (cycling wordmark)">
-          <CyclingWordmark targetVh={0.33} className="site-footer__wordmark" />
+          <CyclingWordmark
+            targetVh={narrow ? 0.14 : 0.33}
+            clampFontToViewport
+            className="site-footer__wordmark"
+          />
         </div>
 
         <p className="site-footer__tagline">Curious by nature, strategic by design.</p>

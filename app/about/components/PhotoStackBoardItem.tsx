@@ -43,8 +43,21 @@ export default function PhotoStackBoardItem(params: {
   focused: boolean;
   onFocus: (id: string) => void;
   registerItemEl: (id: string, el: HTMLDivElement | null) => void;
+  layoutEditMode?: boolean;
+  onLayoutEditPointerDownCapture?: (e: React.PointerEvent, item: BoardItem) => void;
 }) {
-  const { item, focused, onFocus, registerItemEl } = params;
+  const {
+    item,
+    focused,
+    onFocus,
+    registerItemEl,
+    layoutEditMode = false,
+    onLayoutEditPointerDownCapture,
+  } = params;
+
+  const onEditPointerDown = onLayoutEditPointerDownCapture
+    ? (e: React.PointerEvent) => onLayoutEditPointerDownCapture(e, item)
+    : undefined;
   const { visible, layers } = resolveStackImages(item);
   if (layers.length === 0) return null;
 
@@ -72,8 +85,14 @@ export default function PhotoStackBoardItem(params: {
         height: rootH,
         ["--photo-stack-img-w" as string]: `${imgW}px`,
       }}
-      onClick={() => onFocus(item.id)}
+      onPointerDownCapture={layoutEditMode ? onEditPointerDown : undefined}
+      onClick={() => !layoutEditMode && onFocus(item.id)}
     >
+      {layoutEditMode ? (
+        <span className="about-layout-edit-id" aria-hidden="true">
+          {item.id}
+        </span>
+      ) : null}
       {item.hoverAside ? (
         <div className="about-hover-aside" aria-hidden="true">
           {item.hoverAside}

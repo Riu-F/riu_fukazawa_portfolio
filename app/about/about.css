@@ -37,6 +37,77 @@
   cursor: grabbing;
 }
 
+/* Dev-only board layout edit mode — `data-about-layout-edit-active` is only set in dev + ?edit=true */
+.about-viewport[data-about-layout-edit-active="true"] .about-item[data-board-item="true"] {
+  outline: 1px dashed rgba(0, 0, 0, 0.22);
+  outline-offset: 2px;
+  cursor: grab;
+}
+
+.about-viewport[data-about-layout-edit-active="true"][data-about-layout-dragging="true"]
+  .about-item[data-board-item="true"] {
+  cursor: grabbing;
+}
+
+.about-layout-edit-banner {
+  position: absolute;
+  z-index: 45;
+  top: 12px;
+  left: 12px;
+  max-width: min(420px, calc(100% - 24px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  color: rgba(18, 18, 18, 0.88);
+  background: rgba(255, 248, 220, 0.96);
+  border: 1px solid rgba(180, 120, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+
+.about-layout-edit-banner--paused {
+  background: rgba(240, 240, 240, 0.96);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(40, 40, 40, 0.85);
+}
+
+.about-layout-edit-toast {
+  position: absolute;
+  z-index: 46;
+  top: 48px;
+  left: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(18, 18, 18, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+
+.about-layout-edit-id {
+  position: absolute;
+  z-index: 6;
+  top: 2px;
+  left: 2px;
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: rgba(0, 0, 0, 0.42);
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
+
 .about-viewport__zoom {
   position: absolute;
   z-index: 40;
@@ -622,7 +693,7 @@
 }
 
 .mobile-about-section {
-  margin-bottom: var(--mobile-space-2xl);
+  margin-bottom: var(--mobile-space-lg);
 }
 
 .mobile-about-section:last-of-type {
@@ -632,47 +703,139 @@
 /* Section label: mono, distinct from titles and body */
 .mobile-about-section__title {
   font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.38);
-  margin: 0 0 var(--mobile-space-md);
-  padding-bottom: var(--mobile-space-sm);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.42);
+  margin: 0 0 var(--mobile-space-sm);
+  padding: 0.4rem 0.65rem;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
 }
 
-.mobile-about-section__items {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+/* Two-up mood board: more tiles per scroll height.
+ * Scoped under .about--layout-mobile so this wins over any generic rules,
+ * and width: 100% keeps the grid within the padded column (avoids clipped 2nd column). */
+.about.about--layout-mobile .mobile-about-section__items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 0.45rem;
+  row-gap: 0.05rem;
+  align-items: start;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  overflow-x: clip;
 }
 
+/* Mood-board tiles: vertical rhythm only (no list borders) */
 .mobile-about-item {
   margin: 0;
-  padding: var(--mobile-space-xl) 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.055);
+  padding: 0;
+  border: none;
+  position: relative;
+  min-width: 0;
 }
 
-.mobile-about-section__items .mobile-about-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.mobile-about-item--dimmed {
+  opacity: 0.38;
+  filter: blur(2px);
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-/* Hero: centred in column, calm frame */
+.mobile-about-item--overlay-source {
+  opacity: 1;
+  filter: none;
+  z-index: 2;
+}
+
+.mobile-about-item__hit {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 18px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-about-item__hit:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.55);
+  outline-offset: 4px;
+}
+
+.mobile-about-item__visual {
+  display: block;
+  transform-origin: 50% 55%;
+  padding: 0 0 2px;
+}
+
+/* Placeholder / emoji tiles — tactile “object” */
 .mobile-about-item__media {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto var(--mobile-space-lg);
+  margin: 0 auto;
   width: 100%;
-  max-width: var(--mobile-hero-max);
+  max-width: 100%;
+  min-height: 5.25rem;
   border-radius: 14px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.72);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 12px 40px rgba(15, 23, 42, 0.06);
+    0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+/* Compact stack preview (visible images only) */
+.mobile-about-stack-preview {
+  display: flex;
+  justify-content: center;
+  padding: 1px 0 3px;
+  pointer-events: none;
+}
+
+.mobile-about-stack-preview__inner {
+  position: relative;
+  width: 100%;
+  /* Cap to the grid cell — 46vw was ~92% of full viewport and blew past half-width on narrow phones */
+  max-width: min(148px, 100%);
+  height: calc(var(--mobile-stack-w, 78px) * 1.28 + 18px);
+  margin: 0 auto;
+}
+
+.mobile-about-stack-preview__layer {
+  position: absolute;
+}
+
+.mobile-about-stack-preview__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  vertical-align: top;
+  /* Depth like desktop board: shadow follows pixels, no rectangular “frame” */
+  filter: drop-shadow(0 10px 22px rgba(15, 23, 42, 0.18));
+}
+
+.mobile-about-stack-preview--sticker .mobile-about-stack-preview__inner {
+  height: calc(var(--mobile-stack-w, 86px) * 1.22 + 16px);
+}
+
+.mobile-about-stack-preview--polaroid .mobile-about-stack-preview__inner {
+  height: calc(var(--mobile-stack-w, 100px) * 1.2 + 18px);
 }
 
 .mobile-about-item__media--emoji {
@@ -794,5 +957,106 @@
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
   word-break: break-word;
+}
+
+/* Tap-to-read overlay (mobile only) */
+.mobile-about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-bottom, 12px)) 12px max(20px, env(safe-area-inset-bottom, 20px));
+}
+
+@media (min-height: 560px) {
+  .mobile-about-overlay {
+    align-items: center;
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  }
+}
+
+.mobile-about-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: rgba(245, 245, 246, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mobile-about-overlay__panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 26rem;
+  max-height: min(78vh, 640px);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 24px 64px rgba(15, 23, 42, 0.18);
+}
+
+.mobile-about-overlay__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+}
+
+.mobile-about-overlay__close:hover {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.mobile-about-overlay__close:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.mobile-about-overlay__category {
+  font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.mobile-about-overlay__title {
+  font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.15;
+  margin: 0 32px 10px 0;
+  color: #0a0a0a;
+  letter-spacing: -0.02em;
+}
+
+.mobile-about-overlay__scroll {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
+  text-align: left;
 }
 

@@ -243,16 +243,35 @@ export default function AiNav({ current }: AiNavProps) {
           aria-modal="true"
           aria-label="Site menu"
         >
-          <div className="aip-folder aip-folder--projects">
-            <div className="aip-folder-tab" aria-hidden>Projects</div>
-            <div className="aip-folder-sheet aip-folder-sheet--projects">
+          {/* Folders stack from back to front: Home → About → Projects → Contact.
+              Each one's coloured bottom tucks under the next via negative margin
+              on .aip-folder + matching padding-bottom on .aip-folder-sheet. */}
+          <div className="aip-folder aip-folder--home">
+            <div className="aip-folder-tab" aria-hidden>Home</div>
+            <div className="aip-folder-sheet aip-folder-sheet--home">
               <ul className="aip-folder-list">
                 <li>
                   <Link href="/" onClick={close}>Home</Link>
                 </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="aip-folder aip-folder--about">
+            <div className="aip-folder-tab" aria-hidden>About</div>
+            <div className="aip-folder-sheet aip-folder-sheet--about">
+              <ul className="aip-folder-list">
                 <li>
                   <Link href="/about" onClick={close}>About</Link>
                 </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="aip-folder aip-folder--projects">
+            <div className="aip-folder-tab" aria-hidden>Projects</div>
+            <div className="aip-folder-sheet aip-folder-sheet--projects">
+              <ul className="aip-folder-list">
                 <li>
                   <Link href="/super-market-navigation" onClick={close}>
                     Accessible Supermarkets

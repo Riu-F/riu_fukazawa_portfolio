@@ -16,6 +16,11 @@ type CyclingWordmarkProps = {
    * Useful for syncing other UI (e.g. tagline) to the same index.
    */
   onIndexChange?: (idx: number) => void;
+  /**
+   * When true, caps computed font-size so the wordmark cannot exceed the
+   * viewport width (prevents horizontal scroll on mobile footers, etc.).
+   */
+  clampFontToViewport?: boolean;
 };
 
 /**
@@ -28,6 +33,7 @@ export default function CyclingWordmark({
   className = '',
   targetVh = TARGET_VH,
   onIndexChange,
+  clampFontToViewport = false,
 }: CyclingWordmarkProps) {
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -65,13 +71,18 @@ export default function CyclingWordmark({
       if (!el) return;
       const f = FONTS[idx];
       const ratio = measureCapRatio(f);
-      const fsPx = (targetVh * window.innerHeight) / ratio;
+      let fsPx = (targetVh * window.innerHeight) / ratio;
+      if (clampFontToViewport) {
+        const w = window.innerWidth;
+        /* ~3 letters wide display fonts: keep glyph box within viewport */
+        fsPx = Math.min(fsPx, w * 0.36);
+      }
       el.style.fontFamily = `'${f.family}', serif`;
       el.style.fontStyle = f.style;
       el.style.fontWeight = String(f.weight);
       el.style.fontSize = `${fsPx.toFixed(1)}px`;
     },
-    [measureCapRatio, targetVh],
+    [measureCapRatio, targetVh, clampFontToViewport],
   );
 
   const velocityRef = useRef(0);
@@ -121,6 +132,10 @@ export default function CyclingWordmark({
       probe.remove();
     };
   }, [applyFont, measureCapRatio, onIndexChange]);
+
+  useEffect(() => {
+    applyFont(fontIdxRef.current);
+  }, [targetVh, applyFont, clampFontToViewport]);
 
   useEffect(() => {
     if (isMobile) {

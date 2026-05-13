@@ -12,12 +12,24 @@
 - **One content source:** both branches receive the **same** `initialItems` from `loadAboutBoardItems()` — no duplicated copy or media paths.
 - **Breakpoint:** `ABOUT_DESKTOP_LAYOUT_MIN_PX` in `components/AboutBoard.tsx` (default **900**). Change there to retune tablet vs board.
 - **Intro copy** for both surfaces lives in `content/aboutIntroContent.tsx` (desktop intro **card** and mobile **page header** stay aligned).
-- **Mobile:** same **category** grouping and order as before (`life` / `craft`→Skills / `work` / **More**). **No accordion:** everything is visible while scrolling — **no tap to expand**, no selection state, no revealed-image galleries on mobile.
-- **Mobile per item:** **first visible asset only** (see `lib/mobileAboutHero.ts`), then **title**, then **`description` + `detailBody`** via `aboutSharedContent.tsx`. **`revealed/` images** stay in the data model for desktop focus; mobile **does not** render them (can be revisited later).
-- **Mobile chrome:** `main.about--layout-mobile` uses a **board-aligned grid** (20px cell, subtle lines on a cool neutral base), **centred hero media** in a capped column, **Instrument Serif** (page + item titles) + **Inter** (body) + **DM Mono** (section labels), and **tokenised spacing** for vertical rhythm — still **static scroll** only.
-- **Shared text parsing:** `components/aboutSharedContent.tsx` (`AboutDetailBody`, linkify) is used by `FocusAnnotation` (desktop) and `MobileAboutItem` (mobile).
+- **Mobile:** same **category** grouping and order (`life` / `craft`→Skills / `work` / **More**). **Vertical scroll only** — no pan, zoom, or canvas. The page reads as a **vertical mood board**: items are staggered with **deterministic** horizontal tilt/spacing from `lib/mobileBoardPlacement.ts` (stable per `id`). **By default each tile shows only visuals** — a compact **stack preview** of **visible/** images (`components/MobileAboutStackPreview.tsx`, `lib/mobileVisibleImages.ts`) with light offsets/rotations; **no `revealed/`** images and **no fan-out** on mobile. **Tap a tile** to open a floating **text overlay** (`MobileAboutOverlay.tsx`) with title + `description` + `detailBody` via `aboutSharedContent.tsx`; dismiss with **backdrop tap**, **Close**, or **Escape**. Intro block at the top still shows the shared header copy. Section items use a **two-column grid** so more tiles fit per screen height.
+- **Mobile chrome:** `main.about--layout-mobile` keeps the **board-like grid** and typography tokens in `about.css` — scroll-only.
+- **Shared text parsing:** `components/aboutSharedContent.tsx` is used by `FocusAnnotation` (desktop) and **`MobileAboutOverlay`** (mobile).
 
 Hydration note: the layout branch is chosen with `matchMedia` after mount, so the first paint may briefly show the mobile shell on a wide monitor before the board appears — same class of issue as typical responsive client checks.
+
+## Dev-only layout edit mode (authoring)
+
+**Production:** nothing runs — `?edit=true` does nothing, no extra UI, items are not draggable (`NODE_ENV === "production"`).
+
+**Local development:** open the desktop board with **`?edit=true`** on `/about` (e.g. `http://localhost:3000/about?edit=true`). You’ll see a small **Layout edit mode** banner; **drag** items to reposition (board pixel delta = screen pixel delta ÷ current zoom). Pan does not start on item drags (same as normal). **Click-to-focus is disabled** while edit mode is on.
+
+- **Pause / resume:** press **`E`** (only when `?edit=true` is in the URL) to pause editing; banner shows “paused” — press **`E`** again to resume.
+- **Export positions:** **`Cmd + Shift + C`** (Mac) or **`Ctrl + Shift + C`** (Windows/Linux). JSON is copied to the **clipboard** when allowed, and always **`console.log`**’d. Toast: “Positions copied” or “Positions logged to console”.
+- **Exported shape:** `{ "itemId": { "x": number, "y": number }, ... }` — merge **`x` / `y`** into `public/about/board-layout.json` under each matching `id` (optional fields like `focusZoom` are **not** in export; keep them manually if needed).
+- **No auto-save:** state is in-memory only; refresh resets unless you paste coordinates back into the layout file.
+
+Implementation: `hooks/useAboutBoardEditMode.ts`, `components/BoardViewport.tsx`, item renderers, `about.css` (styles gated by `data-about-layout-edit-active`).
 
 ## Slugs vs display titles
 
@@ -55,6 +67,7 @@ Optional `focusZoom` in JSON may remain for future use; **focus does not move or
 - **`revealed/`** images are listed in `revealedImages` and are **only** layered when the stack is **focused** (expanded); they are never copied into `visible` automatically.
 - If the same path appears in both folders (or duplicated in data), **`lib/dedupeStackImages.ts`** removes repeats while preserving order; **`revealed`** entries that match a **`visible`** `src` are dropped so expanded mode does not show the same file twice.
 - Items with **one** visible file and **no** revealed files render **one** layer (no padding with duplicate URLs).
+- **Mobile:** stack tiles use **`visible/`** only for the compact preview; **`revealed/`** never appears on the scroll page or in the tap overlay (desktop focus still uses them).
 
 ## Resting photo stack offset
 
@@ -156,7 +169,7 @@ Implementation: `hooks/useBoardCamera.ts` — pointer-anchored zoom, clamped cam
 
 - **`description`:** short line under the title.
 - **`detailBody`:** Split on blank lines (`\n\n`) into blocks. Each block is either a paragraph or, if it contains internal newlines, a bullet list (one `<li>` per line). URLs starting with `http`/`https` become links.
-- Implemented once in **`components/aboutSharedContent.tsx`** for desktop annotations and mobile panels.
+- Implemented once in **`components/aboutSharedContent.tsx`** for desktop annotations and the **mobile overlay**.
 
 ## Implementation map
 
@@ -165,13 +178,15 @@ Implementation: `hooks/useBoardCamera.ts` — pointer-anchored zoom, clamped cam
 | Load JSON + folders | `lib/loadBoardItems.ts` |
 | De-dupe stack `src` lists | `lib/dedupeStackImages.ts` |
 | Group items for mobile sections | `lib/groupAboutItemsForMobile.ts` |
-| First visible image for mobile hero | `lib/mobileAboutHero.ts` |
+| Mobile visible-only stack images | `lib/mobileVisibleImages.ts` |
+| Mobile mood-board offsets (deterministic) | `lib/mobileBoardPlacement.ts` |
 | Intro copy (desktop + mobile) | `content/aboutIntroContent.tsx` |
 | Shared body / links | `components/aboutSharedContent.tsx` |
 | Breakpoint + branch | `components/AboutBoard.tsx` |
 | Desktop canvas | `components/DesktopAboutBoard.tsx`, `BoardViewport.tsx` |
-| Mobile list UI | `components/MobileAboutBoard.tsx`, `MobileAboutSection.tsx`, `MobileAboutItem.tsx` |
+| Mobile mood board + tap overlay | `components/MobileAboutBoard.tsx`, `MobileAboutSection.tsx`, `MobileAboutItem.tsx`, `MobileAboutStackPreview.tsx`, `MobileAboutOverlay.tsx` |
 | Pan / zoom / clamp | `hooks/useBoardCamera.ts` (also exported as `useBoardPan`) |
+| Dev layout edit (`?edit=true`) | `hooks/useAboutBoardEditMode.ts`, `components/BoardViewport.tsx` |
 | Item markup (board) | `components/BoardItemRenderer.tsx`, `PhotoStackBoardItem.tsx` |
 | Stack geometry | `components/photoStackLayout.ts` |
 | Annotation UI (desktop) | `components/FocusAnnotation.tsx` |

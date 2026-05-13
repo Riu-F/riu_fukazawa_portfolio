@@ -1,299 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import { PERSONAS, generateCheckout }   from './ai-checkout-mock';
+import type { Card, CheckoutData }       from './ai-checkout-types';
 
-/* ── TypeScript interfaces (API-ready) ──────────────────────────── */
-interface ExpandedSection {
-  heading:  string;
-  bullets?: string[];
-  tip?:     string;
+/* ── Card width logic ────────────────────────────────────────────
+   flex-grow ratios approximate:
+     0 open  →  1 : 1 : 1   (equal thirds)
+     1 open  →  4 : 1 : 1   (~60% : 20% : 20%)
+     2 open  →  5 : 5 : 2   (~42% : 42% : 17%)
+     3 open  →  1 : 1 : 1   (equal thirds)
+──────────────────────────────────────────────────────────────── */
+function cardFlexGrow(cardIdx: number, openCards: Set<number>): number {
+  const openCount = openCards.size;
+  const isOpen    = openCards.has(cardIdx);
+  if (openCount === 0 || openCount === 3) return 1;
+  if (isOpen) return openCount === 1 ? 4 : 5;
+  return openCount === 1 ? 1 : 2;
 }
-
-interface RecCard {
-  icon:     string;
-  label:    string;
-  summary:  string;
-  tag:      string;
-  expanded: ExpandedSection[];
-}
-
-interface TripInfo {
-  destination: string;
-  dates:       string;
-  travellers:  string;
-  nights:      string;
-}
-
-interface PersonaData {
-  id:       string;
-  name:     string;
-  traits:   string;
-  iconName: string;
-  heading:  string;
-  sub:      string;
-  trip:     TripInfo;
-  cards:    RecCard[];
-}
-
-/* ── Mock data ──────────────────────────────────────────────────── */
-const PERSONAS: PersonaData[] = [
-  {
-    id:       'dewi',
-    name:     'Dewi',
-    traits:   'Family · First overseas trip',
-    iconName: 'family',
-    heading:  'Your Tokyo family holiday is confirmed!',
-    sub:      "Hi Dewi — here's a practical wrap-up for your first overseas trip with the kids.",
-    trip: { destination: 'Tokyo, Japan', dates: '18–26 Dec', travellers: '4 Guests', nights: '8 nights' },
-    cards: [
-      {
-        icon:    'passport',
-        label:   'Arrival & Entry',
-        summary: 'Visa requirements, Visit Japan Web, and the easiest airport transfer with kids.',
-        tag:     'Essential',
-        expanded: [
-          {
-            heading: 'Before you fly',
-            bullets: [
-              'Indonesian passports may need a Japanese tourist visa — confirm with the Embassy in Jakarta and allow time for processing.',
-              'Complete Visit Japan Web before departure to generate QR codes for immigration and customs.',
-              'Tokyo is only 2 hours ahead of Jakarta, so jet lag is minimal.',
-            ],
-          },
-          {
-            heading: 'Getting from the airport',
-            bullets: [
-              'Airport Limousine Bus is the easiest option — ample luggage space, direct to major hotels.',
-              'Haneda is closer to central Tokyo (~40 min); Narita takes longer (~1hr 30min by bus).',
-            ],
-            tip: 'Book limousine bus tickets in advance — they can sell out during December peak season.',
-          },
-        ],
-      },
-      {
-        icon:    'park',
-        label:   'Family Days Out',
-        summary: 'Kid-friendly parks, indoor picks for chilly days, and advance ticket tips.',
-        tag:     'With kids',
-        expanded: [
-          {
-            heading: 'December weather',
-            bullets: [
-              'Cool and dry, around 3–10°C with sunset near 4:30 pm.',
-              'Pack layers: thermal tops, jumpers, a warm jacket, beanies, and gloves.',
-              'Comfortable walking shoes are essential.',
-            ],
-          },
-          {
-            heading: 'Recommended picks',
-            bullets: [
-              'DisneySea or Disneyland — buy dated tickets in advance via the official app.',
-              'Sanrio Puroland — great indoor option for younger kids.',
-              'Sumida Aquarium at Tokyo Skytree — easy half-day with young children.',
-              "Odaiba's DiverCity or Ikspiari (Disney Resort area) for shopping and food.",
-            ],
-            tip: 'Busy parks sell out weeks ahead in late December — book as soon as possible.',
-          },
-        ],
-      },
-      {
-        icon:    'train',
-        label:   'Getting Around',
-        summary: 'Suica cards, child fares, halal dining, and family convenience store tips.',
-        tag:     'Family tip',
-        expanded: [
-          {
-            heading: 'Transport',
-            bullets: [
-              'Pick up a Suica or PASMO card on arrival — ask station staff to set up child cards at half fare.',
-              'IC cards work on trains, buses, and many shops and convenience stores.',
-            ],
-          },
-          {
-            heading: 'Food',
-            bullets: [
-              'Family-friendly options: chicken or shoyu ramen, Japanese curry rice, tempura, gyoza.',
-              'For halal options, use the Halal Gourmet Japan app — good coverage around Asakusa and Shinjuku.',
-            ],
-            tip: 'Convenience stores (7-Eleven, Lawson, FamilyMart) are excellent for quick snacks and reasonably priced meals.',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id:       'jordan',
-    name:     'Jordan',
-    traits:   'Solo · Photographer · Budget-conscious',
-    iconName: 'camera',
-    heading:  'Your Kyoto spring getaway is confirmed, Jordan!',
-    sub:      "Twelve nights to wander slow — temple walks, design detours, and the tail-end of cherry blossoms.",
-    trip: { destination: 'Kyoto, Japan', dates: '1–13 Apr', travellers: '1 Guest', nights: '12 nights' },
-    cards: [
-      {
-        icon:    'train',
-        label:   'Airport to City',
-        summary: 'JR Haruka Express, IC card setup, and the quickest route into Kyoto.',
-        tag:     'Getting there',
-        expanded: [
-          {
-            heading: 'From Kansai (KIX)',
-            bullets: [
-              'JR Haruka Express runs direct to Kyoto Station — about 75 minutes, no transfers.',
-              'Add an ICOCA, Suica, or PASMO card to Apple/Google Wallet for tap-on fares.',
-              'IC cards cover trains, subways, most buses, and convenience stores across Kansai.',
-            ],
-            tip: 'The Haruka Express requires a reserved seat — book online or at the ticket machine on arrival.',
-          },
-          {
-            heading: 'From Itami (ITM)',
-            bullets: [
-              'Airport limousine bus runs to Kyoto Station in about 55 minutes.',
-              'Less convenient than Kansai but works well for early-morning arrivals.',
-            ],
-          },
-        ],
-      },
-      {
-        icon:    'map',
-        label:   'April Rhythm',
-        summary: 'Beat the crowds at Fushimi Inari, Arashiyama, and Higashiyama — plus the best coffee.',
-        tag:     'Golden hour',
-        expanded: [
-          {
-            heading: 'Timing',
-            bullets: [
-              'Fushimi Inari: arrive before sunrise — golden light, almost no crowds.',
-              'Arashiyama bamboo grove: before 8 am on weekdays.',
-              'Higashiyama lanes: weekday mornings before tour groups arrive (~9 am).',
-            ],
-          },
-          {
-            heading: 'Coffee precision',
-            bullets: [
-              'Weekenders Coffee (Fuyacho) — pour-over specialists, quiet atmosphere.',
-              'Kurasu Kyoto (Kyoto Station area) — specialty espresso, great natural light.',
-              '% Arabica — two locations: Higashiyama and Arashiyama, both photogenic.',
-              'Vermillion Espresso Bar — near Fushimi Inari, ideal post-shoot stop.',
-            ],
-            tip: "April cherry blossoms typically peak in early April around Maruyama Park and Philosopher's Path — overlap with your first few days.",
-          },
-        ],
-      },
-      {
-        icon:    'compass',
-        label:   'Pack Smart',
-        summary: 'April layering guide, waterproofing, and photography restrictions to know.',
-        tag:     'Gear & rules',
-        expanded: [
-          {
-            heading: 'What to bring',
-            bullets: [
-              'Expect 8–20°C with occasional light showers — pack layers and a compact waterproof jacket.',
-              'Shoes that handle cobblestones and temple stairs (cushioned soles are ideal).',
-              'Small day bag: water, IC card, portable charger for long shooting days.',
-            ],
-          },
-          {
-            heading: 'Photography rules',
-            bullets: [
-              "Many temples and shrines ban tripods — use a compact travel tripod or shoot handheld.",
-              "Drones are prohibited across almost all of Kyoto's heritage areas.",
-              "Gion's private alleys (Hanamikoji) restrict photography of geiko and maiko entirely.",
-            ],
-            tip: "The Philosopher's Path is one of the few central spots where tripods are widely accepted — great for long exposures at dusk.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id:       'harold',
-    name:     'Harold & Margaret',
-    traits:   'Retired couple · Comfort-led · Art lovers',
-    iconName: 'couple',
-    heading:  'Your Paris escape is confirmed!',
-    sub:      "Bonjour — 9 mellow September nights in Paris, ideal for art, gardens, and unhurried strolls.",
-    trip: { destination: 'Paris, France', dates: '8–17 Sep', travellers: '2 Guests', nights: '9 nights' },
-    cards: [
-      {
-        icon:    'car',
-        label:   'Arriving with Ease',
-        summary: 'Pre-booked chauffeur, official taxi fares, and the easiest route from CDG.',
-        tag:     'Premium',
-        expanded: [
-          {
-            heading: 'Recommended options',
-            bullets: [
-              'Pre-booked chauffeur: meet-and-greet at the exit, luggage assistance, fixed fare to hotel.',
-              'Official taxis have set fares: ~€53 to the Right Bank, ~€58 to the Left Bank.',
-              'Avoid unofficial drivers — always use the official taxi rank or a pre-booked service.',
-            ],
-          },
-          {
-            heading: 'What to expect',
-            bullets: [
-              'The journey from CDG to central Paris takes about 45–60 minutes, depending on traffic.',
-              'Paris Orly (ORF) is closer — about 30 minutes by taxi.',
-            ],
-            tip: 'Book a chauffeur in advance if arriving during morning rush (7–9 am) or peak weekends — availability drops quickly.',
-          },
-        ],
-      },
-      {
-        icon:    'star',
-        label:   'Art & Gardens',
-        summary: "Timed entries for the Louvre and Musée d'Orsay, plus the most beautiful walks.",
-        tag:     'Curated',
-        expanded: [
-          {
-            heading: 'Book in advance',
-            bullets: [
-              'Louvre — book timed entry online; closed Tuesdays. Aim for first entry (9 am) to beat crowds.',
-              "Musée d'Orsay — closed Mondays; timed entry required in peak season.",
-              "Musée de l'Orangerie — closed Tuesdays; smaller, quieter, and home to Monet's Water Lilies.",
-            ],
-          },
-          {
-            heading: 'Easy walks and gardens',
-            bullets: [
-              'Jardin du Luxembourg — beautiful in September, with late-season roses and shaded paths.',
-              'Jardins des Tuileries — connects Louvre to Place de la Concorde, ideal for a slow afternoon.',
-              'Palais Royal gardens — quieter than most, excellent for sitting and reading.',
-            ],
-            tip: "The Musée d'Orsay and Louvre are very large — plan one per day and arrive rested. Afternoons are best for smaller galleries.",
-          },
-        ],
-      },
-      {
-        icon:    'food',
-        label:   'Dining & Daily Life',
-        summary: 'September weather, reservation tips, and lunch tasting menus for best value.',
-        tag:     'Fine dining',
-        expanded: [
-          {
-            heading: 'September in Paris',
-            bullets: [
-              'Mild and pleasant: around 12–22°C with occasional light showers.',
-              'Pack layers and a light rain jacket — evenings can be cool after dinner.',
-              'Supportive, comfortable shoes for cobblestone streets and museum floors.',
-            ],
-          },
-          {
-            heading: 'Dining well',
-            bullets: [
-              'Parisians dine late — restaurants typically fill up from 8 pm onwards.',
-              'Book popular bistros and brasseries in advance, especially Friday and Saturday evenings.',
-              'Lunch tasting menus at Michelin-starred restaurants offer exceptional value — often half the dinner price.',
-              'Look for the "formule" (set lunch) at neighbourhood bistros: typically 2–3 courses under €25.',
-            ],
-            tip: 'Le Comptoir du Relais (Saint-Germain) and Septime (Bastille) are beloved by locals — book at least 2–3 weeks ahead.',
-          },
-        ],
-      },
-    ],
-  },
-];
 
 /* ── SVG helpers ─────────────────────────────────────────────────── */
 function Svg({ children, size = 16, stroke = 'currentColor' }: {
@@ -335,8 +59,8 @@ function PersonaIcon({ iconName, active }: { iconName: string; active: boolean }
     <div style={{
       width: 32, height: 32, borderRadius: 8, flexShrink: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background:  active ? '#2a2a2a' : '#f0f0f0',
-      transition:  'background 220ms ease-out',
+      background: active ? '#2a2a2a' : '#f0f0f0',
+      transition: 'background 220ms ease-out',
     }}>
       <Icon name={iconName} size={15} stroke={active ? '#fff' : '#777'} />
     </div>
@@ -344,9 +68,10 @@ function PersonaIcon({ iconName, active }: { iconName: string; active: boolean }
 }
 
 /* ── Expandable rec card ─────────────────────────────────────────── */
-function ExpandableCard({ card, isExpanded, onToggle }: {
-  card:       RecCard;
+function ExpandableCard({ card, isExpanded, compact, onToggle }: {
+  card:       Card;
   isExpanded: boolean;
+  compact:    boolean;   /* true when another card is open and this one is narrow */
   onToggle:   () => void;
 }) {
   return (
@@ -357,29 +82,36 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
         borderRadius: 9,
         border:       `1px solid ${isExpanded ? '#e0e0e0' : 'transparent'}`,
         cursor:       'pointer',
+        height:       '100%',
+        boxSizing:    'border-box',
         transition:   'border-color 220ms ease, background 220ms ease, box-shadow 220ms ease',
         boxShadow:    isExpanded ? '0 2px 12px rgba(0,0,0,0.05)' : 'none',
+        overflow:     'hidden',
       }}
     >
       {/* Header — always visible */}
       <div style={{ padding: '12px 12px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
 
-        {/* Icon + title + chevron row */}
+        {/* Icon + title + chevron */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
             <div style={{
-              width: 26, height: 26, borderRadius: 6,
+              width: 26, height: 26, borderRadius: 6, flexShrink: 0,
               background:  isExpanded ? '#2a2a2a' : '#fff',
               display:     'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink:  0, transition: 'background 220ms ease',
+              transition:  'background 220ms ease',
             }}>
               <Icon name={card.icon} size={13} stroke={isExpanded ? '#fff' : '#666'} />
             </div>
             <span style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: 13.5, fontWeight: 500, color: '#111', lineHeight: 1.25,
+              fontFamily:   "'Outfit', sans-serif",
+              fontSize:     13.5, fontWeight: 500, color: '#111', lineHeight: 1.25,
+              overflow:     'hidden',
+              display:      '-webkit-box',
+              WebkitLineClamp: compact ? 2 : 'unset',
+              WebkitBoxOrient: 'vertical',
             }}>
-              {card.label}
+              {card.title}
             </span>
           </div>
           <div style={{
@@ -391,8 +123,8 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
           </div>
         </div>
 
-        {/* Summary — hidden when expanded to avoid redundancy with detail content */}
-        {!isExpanded && (
+        {/* Summary — hidden when expanded or when the card is being squeezed */}
+        {!isExpanded && !compact && (
           <span style={{ fontSize: 12, fontWeight: 400, color: '#555', lineHeight: 1.5 }}>
             {card.summary}
           </span>
@@ -406,13 +138,14 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
           textTransform: 'uppercase', color: isExpanded ? '#666' : '#888',
           background:    isExpanded ? '#f0f0f0' : '#ebebeb',
           padding:       '2px 8px', borderRadius: 4,
-          alignSelf:     'flex-start', transition: 'background 220ms ease, color 220ms ease',
+          alignSelf:     'flex-start',
+          transition:    'background 220ms ease, color 220ms ease',
         }}>
           {card.tag}
         </span>
       </div>
 
-      {/* Expanded detail — animates open/closed via grid trick */}
+      {/* Expanded drawer — animates via CSS grid row trick */}
       <div style={{
         display:          'grid',
         gridTemplateRows: isExpanded ? '1fr' : '0fr',
@@ -420,16 +153,25 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
       }}>
         <div style={{ overflow: 'hidden', minHeight: 0 }}>
           <div style={{ padding: '0 12px 16px', borderTop: '1px solid #ebebeb' }}>
-            {card.expanded.map((section, si) => (
+
+            {/* Intro paragraph */}
+            <p style={{
+              fontSize: 12.5, fontWeight: 400, color: '#444',
+              lineHeight: 1.65, marginTop: 12, marginBottom: 14,
+            }}>
+              {card.expanded.intro}
+            </p>
+
+            {/* Structured sections */}
+            {card.expanded.sections.map((section, si) => (
               <div
                 key={si}
                 style={{
-                  marginTop:   si === 0 ? 14 : 0,
-                  paddingTop:  si > 0   ? 12 : 0,
-                  borderTop:   si > 0   ? '1px solid #f3f3f3' : 'none',
+                  paddingTop: si > 0 ? 12 : 0,
+                  borderTop:  si > 0 ? '1px solid #f3f3f3' : 'none',
+                  marginTop:  si > 0 ? 0 : 0,
                 }}
               >
-                {/* Section label */}
                 <div style={{
                   fontFamily:    "'DM Mono', monospace",
                   fontSize:      9, fontWeight: 500, letterSpacing: '0.8px',
@@ -438,30 +180,25 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
                   {section.heading}
                 </div>
 
-                {/* Bullets */}
-                {section.bullets && (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {section.bullets.map((b, bi) => (
-                      <li key={bi} style={{
-                        fontSize: 12, lineHeight: 1.6, color: '#3a3a3a',
-                        paddingLeft: '1.1rem', position: 'relative',
-                        marginBottom: bi < section.bullets!.length - 1 ? 5 : 0,
-                      }}>
-                        <span style={{ position: 'absolute', left: 0, color: '#ccc', userSelect: 'none' }}>–</span>
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {section.bullets.map((b, bi) => (
+                    <li key={bi} style={{
+                      fontSize: 12, lineHeight: 1.6, color: '#3a3a3a',
+                      paddingLeft: '1.1rem', position: 'relative',
+                      marginBottom: bi < section.bullets.length - 1 ? 5 : 0,
+                    }}>
+                      <span style={{ position: 'absolute', left: 0, color: '#ccc', userSelect: 'none' }}>–</span>
+                      {b}
+                    </li>
+                  ))}
+                </ul>
 
-                {/* Tip callout */}
                 {section.tip && (
                   <div style={{
-                    marginTop:   9, padding: '8px 11px',
-                    background:  '#f8f8fc', borderRadius: 6,
-                    borderLeft:  '2px solid #c8c4e0',
-                    fontSize:    11.5, color: '#555', lineHeight: 1.55,
-                    fontStyle:   'italic',
+                    marginTop:  9, padding: '8px 11px',
+                    background: '#f8f8fc', borderRadius: 6,
+                    borderLeft: '2px solid #c8c4e0',
+                    fontSize:   11.5, color: '#555', lineHeight: 1.55, fontStyle: 'italic',
                   }}>
                     {section.tip}
                   </div>
@@ -477,20 +214,29 @@ function ExpandableCard({ card, isExpanded, onToggle }: {
 
 /* ── Main component ─────────────────────────────────────────────── */
 export default function AiCheckoutPrototype() {
-  const [activeIdx, setActiveIdx]     = useState(0);
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [activePersonaIdx, setActivePersonaIdx] = useState(0);
+  const [openCards, setOpenCards]               = useState<Set<number>>(new Set());
 
-  const persona = PERSONAS[activeIdx];
+  const activePersona = PERSONAS[activePersonaIdx];
+
+  /* generateCheckout is the seam for future API integration */
+  const checkout: CheckoutData = generateCheckout(activePersona.id);
 
   function handlePersonaChange(idx: number) {
-    if (idx === activeIdx) return;
-    setActiveIdx(idx);
-    setExpandedCard(null);
+    if (idx === activePersonaIdx) return;
+    setActivePersonaIdx(idx);
+    setOpenCards(new Set());
   }
 
   function toggleCard(cardIdx: number) {
-    setExpandedCard(prev => prev === cardIdx ? null : cardIdx);
+    setOpenCards(prev => {
+      const next = new Set(prev);
+      if (next.has(cardIdx)) next.delete(cardIdx); else next.add(cardIdx);
+      return next;
+    });
   }
+
+  const anyOpen = openCards.size > 0;
 
   return (
     <div style={{
@@ -508,7 +254,7 @@ export default function AiCheckoutPrototype() {
         style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}
       >
         {PERSONAS.map((p, i) => {
-          const isActive = activeIdx === i;
+          const isActive = activePersonaIdx === i;
           return (
             <button
               key={p.id}
@@ -524,7 +270,7 @@ export default function AiCheckoutPrototype() {
                 borderRadius: 10, cursor: 'pointer', userSelect: 'none',
                 transition:   'border-color 200ms ease, background 200ms ease, box-shadow 200ms ease',
                 boxShadow:    isActive
-                  ? '0 2px 8px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.04), 0 3px 12px rgba(180,140,240,0.11), 0 3px 12px rgba(130,200,220,0.09)'
+                  ? '0 2px 8px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.04), 0 3px 12px rgba(180,140,240,0.11)'
                   : 'none',
                 outline: 'none',
               }}
@@ -546,14 +292,14 @@ export default function AiCheckoutPrototype() {
         })}
       </div>
 
-      {/* ── Browser chrome + output ────────────────────────────────── */}
+      {/* ── Browser chrome ────────────────────────────────────────── */}
       <div style={{
         borderRadius: 14, border: '1px solid #e4e4e4',
         boxShadow: '0 2px 20px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.03)',
         overflow: 'hidden', background: '#fff',
       }}>
 
-        {/* Browser toolbar */}
+        {/* Toolbar */}
         <div style={{
           height: 32, flexShrink: 0, background: '#f5f5f5',
           borderBottom: '1px solid #e8e8e8',
@@ -572,13 +318,12 @@ export default function AiCheckoutPrototype() {
           </div>
         </div>
 
-        {/* Rainbow separator */}
         <div className="ai-output-separator" />
 
         {/* Output body */}
         <div style={{ padding: '22px 22px 26px' }}>
 
-          {/* Success indicator + heading */}
+          {/* Confirmation header */}
           <div style={{
             textAlign: 'center', marginBottom: 18,
             paddingBottom: 18, borderBottom: '1px solid #f0f0f0',
@@ -591,31 +336,31 @@ export default function AiCheckoutPrototype() {
               <Icon name="check" size={15} stroke="#fff" />
             </div>
             <h3 style={{
-              fontFamily:    "'Outfit', sans-serif",
-              fontSize:      20, fontWeight: 500, letterSpacing: '-0.3px',
-              marginBottom:  6, color: '#111',
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: 20, fontWeight: 500, letterSpacing: '-0.3px',
+              marginBottom: 6, color: '#111',
             }}>
-              {persona.heading}
+              {checkout.title}
             </h3>
             <p style={{
               fontSize: 13.5, fontWeight: 300, color: '#555',
               lineHeight: 1.55, maxWidth: 420, margin: '0 auto',
             }}>
-              {persona.sub}
+              {checkout.subtitle}
             </p>
           </div>
 
           {/* Trip strip */}
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap',
+            display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
             background: '#f7f7f7', borderRadius: 8, marginBottom: 18, overflow: 'hidden',
           }}>
-            {[
-              { label: 'Destination', value: persona.trip.destination },
-              { label: 'Dates',       value: persona.trip.dates       },
-              { label: 'Travellers',  value: persona.trip.travellers  },
-              { label: 'Length',      value: persona.trip.nights      },
-            ].map((item, idx, arr) => (
+            {([
+              { label: 'Destination', value: checkout.trip_info.destination },
+              { label: 'Dates',       value: checkout.trip_info.dates       },
+              { label: 'Travellers',  value: checkout.trip_info.travellers  },
+              { label: 'Length',      value: checkout.trip_info.nights      },
+            ] as const).map((item, idx, arr) => (
               <div
                 key={item.label}
                 style={{
@@ -625,8 +370,8 @@ export default function AiCheckoutPrototype() {
                 }}
               >
                 <div style={{
-                  fontFamily:    "'DM Mono', monospace",
-                  fontSize:      9, fontWeight: 500, textTransform: 'uppercase',
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 9, fontWeight: 500, textTransform: 'uppercase',
                   letterSpacing: '0.9px', color: '#aaa', marginBottom: 4,
                 }}>
                   {item.label}
@@ -643,26 +388,41 @@ export default function AiCheckoutPrototype() {
 
           {/* Section label */}
           <div style={{
-            fontFamily:    "'DM Mono', monospace",
-            fontSize:      9.5, fontWeight: 500, textTransform: 'uppercase',
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 9.5, fontWeight: 500, textTransform: 'uppercase',
             letterSpacing: '1px', color: '#bbb', marginBottom: 10,
           }}>
             Recommended next steps
           </div>
 
-          {/* Expandable rec cards */}
-          <div className="aip-proto-rec-grid">
-            {persona.cards.map((card, ci) => (
-              <ExpandableCard
-                key={`${persona.id}-${ci}`}
-                card={card}
-                isExpanded={expandedCard === ci}
-                onToggle={() => toggleCard(ci)}
-              />
-            ))}
+          {/* Cards — flex row with dynamic width on desktop, stacked on mobile */}
+          <div className="aip-proto-cards-row">
+            {checkout.cards.map((card, ci) => {
+              const isExpanded = openCards.has(ci);
+              const compact    = anyOpen && !isExpanded;
+              return (
+                <div
+                  key={card.id}
+                  style={{
+                    flexGrow:   cardFlexGrow(ci, openCards),
+                    flexShrink: 1,
+                    flexBasis:  0,
+                    minWidth:   0,
+                    transition: 'flex-grow 320ms ease',
+                  }}
+                >
+                  <ExpandableCard
+                    card={card}
+                    isExpanded={isExpanded}
+                    compact={compact}
+                    onToggle={() => toggleCard(ci)}
+                  />
+                </div>
+              );
+            })}
           </div>
 
-          {/* Footer note */}
+          {/* Footer */}
           <p style={{
             marginTop:  18, fontSize: 10.5, color: '#ccc', textAlign: 'center',
             fontFamily: "'DM Mono', monospace", letterSpacing: '0.3px',

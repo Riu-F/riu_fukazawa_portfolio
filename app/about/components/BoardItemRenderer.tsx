@@ -14,20 +14,44 @@ function HoverAside({ text }: { text: string | undefined }) {
   );
 }
 
+function LayoutEditIdLabel({ id }: { id: string }) {
+  return (
+    <span className="about-layout-edit-id" aria-hidden="true">
+      {id}
+    </span>
+  );
+}
+
 export default function BoardItemRenderer(params: {
   item: BoardItem;
   focused: boolean;
   onFocus: (id: string) => void;
   registerItemEl: (id: string, el: HTMLDivElement | null) => void;
+  layoutEditMode?: boolean;
+  onLayoutEditPointerDownCapture?: (e: React.PointerEvent, item: BoardItem) => void;
 }) {
-  const { item, focused, onFocus, registerItemEl } = params;
+  const {
+    item,
+    focused,
+    onFocus,
+    registerItemEl,
+    layoutEditMode = false,
+    onLayoutEditPointerDownCapture,
+  } = params;
+
+  const onEditPointerDown = onLayoutEditPointerDownCapture
+    ? (e: React.PointerEvent) => onLayoutEditPointerDownCapture(e, item)
+    : undefined;
 
   if (item.type === "instructionCard") {
     return (
       <div
         className="about-item about-item--noninteractive"
+        data-board-item={layoutEditMode ? "true" : undefined}
         style={{ left: item.x, top: item.y }}
+        onPointerDownCapture={layoutEditMode ? onEditPointerDown : undefined}
       >
+        {layoutEditMode ? <LayoutEditIdLabel id={item.id} /> : null}
         <div className="about-card">
           <div className="about-chip">
             <AboutIntroChip />
@@ -61,13 +85,16 @@ export default function BoardItemRenderer(params: {
         data-focused={focused ? "true" : "false"}
         data-board-fallback={showTitleFallback ? "title" : "emoji"}
         style={{ left: item.x, top: item.y }}
+        onPointerDownCapture={layoutEditMode ? onEditPointerDown : undefined}
       >
+        {layoutEditMode ? <LayoutEditIdLabel id={item.id} /> : null}
         <button
           type="button"
           className={showTitleFallback ? "about-board-fallback-btn" : "about-object-btn"}
           aria-pressed={focused}
           disabled={!interactive}
-          onClick={() => interactive && onFocus(item.id)}
+          style={layoutEditMode ? { pointerEvents: "none" } : undefined}
+          onClick={() => interactive && !layoutEditMode && onFocus(item.id)}
         >
           {showTitleFallback ? (
             <span className="about-board-fallback-btn__label">{item.title ?? item.id}</span>
@@ -87,6 +114,8 @@ export default function BoardItemRenderer(params: {
         focused={focused}
         onFocus={onFocus}
         registerItemEl={registerItemEl}
+        layoutEditMode={layoutEditMode}
+        onLayoutEditPointerDownCapture={onLayoutEditPointerDownCapture}
       />
     );
   }
@@ -104,11 +133,14 @@ export default function BoardItemRenderer(params: {
         data-board-item="true"
         data-focused={focused ? "true" : "false"}
         style={{ left: item.x, top: item.y }}
+        onPointerDownCapture={layoutEditMode ? onEditPointerDown : undefined}
       >
+        {layoutEditMode ? <LayoutEditIdLabel id={item.id} /> : null}
         <button
           type="button"
           className={`about-asset-hit about-asset-hit--${mod}`}
-          onClick={() => onFocus(item.id)}
+          style={layoutEditMode ? { pointerEvents: "none" } : undefined}
+          onClick={() => !layoutEditMode && onFocus(item.id)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
