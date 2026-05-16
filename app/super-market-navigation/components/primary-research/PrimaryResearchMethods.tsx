@@ -7,7 +7,21 @@ export function PrimaryResearchMethods() {
     'super-market-navigation/research/observations',
     'Observation',
   );
+  const interviewImages = getPublicFolderGalleryImages(
+    'super-market-navigation/research/interviews',
+    'Interview transcript',
+  );
+  const surveyImages = getPublicFolderGalleryImages(
+    'super-market-navigation/research/surveys',
+    'Survey result',
+  );
 
-  return <PrimaryResearchMethodsClient observationImages={observationImages} />;
+  return (
+    <PrimaryResearchMethodsClient
+      observationImages={observationImages}
+      interviewImages={interviewImages}
+      surveyImages={surveyImages}
+    />
+  );
 }
 

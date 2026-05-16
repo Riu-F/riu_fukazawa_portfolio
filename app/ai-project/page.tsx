@@ -1,6 +1,5 @@
 import './ai-project.css';
 import AiNav            from './components/AiNav';
-import AiHero           from './components/AiHero';
 import ScrollAnimations from './components/ScrollAnimations';
 import AiIdea           from './components/AiIdea';
 import AiContext        from './components/AiContext';
@@ -9,8 +8,9 @@ import AiCompetitor     from './components/AiCompetitor';
 import AiGoal           from './components/AiGoal';
 import AiOutcome        from './components/AiOutcome';
 import AiHowItWorks     from './components/AiHowItWorks';
-import AiProduct        from './components/AiProduct';
-import AiProcess        from './components/AiProcess';
+import AiCheckoutHero        from './components/AiCheckoutHero';
+import AiCheckoutGenerator   from './components/AiCheckoutGenerator';
+import AiProcess              from './components/AiProcess';
 import AiFooter         from './components/AiFooter';
 
 export const metadata = {
@@ -23,12 +23,12 @@ export default function AiProjectPage() {
     <div className="aip">
       <ScrollAnimations />
       <AiNav current="ai-project" />
-      <AiHero />
+      <AiCheckoutHero />
+      <AiCheckoutGenerator />
       <AiIdea />
       <AiContext />
       <AiProblem />
       <AiCompetitor />
-      <AiProduct />
       <AiGoal />
       <AiOutcome />
       <AiHowItWorks />

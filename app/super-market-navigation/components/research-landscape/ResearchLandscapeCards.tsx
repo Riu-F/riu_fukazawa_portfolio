@@ -1,5 +1,7 @@
 'use client';
 
+import { PublicFolderLightboxGalleryClient } from '@/app/components/gallery/PublicFolderLightboxGalleryClient';
+import type { PublicFolderGalleryImage } from '@/lib/publicFolderGallery';
 import { useEffect, useRef, useState } from 'react';
 
 function SecondaryLandscapeTable() {
@@ -93,7 +95,7 @@ function CompetitorComparisonTable() {
   );
 }
 
-function SecondaryResearchExpanded() {
+function SecondaryResearchExpanded({ images }: { images: PublicFolderGalleryImage[] }) {
   return (
     <div className="rl-expanded">
       <p className="paragraph-new">
@@ -120,6 +122,11 @@ function SecondaryResearchExpanded() {
         supermarkets as systems, not just interfaces, which was useful later when we conducted walkthroughs
         and mapped pain points.
       </p>
+      <PublicFolderLightboxGalleryClient
+        images={images}
+        groupAriaLabel="Secondary research documents"
+        lightboxAriaLabel="Secondary research image"
+      />
       <p className="paragraph-new">
         Finally, we grounded the work in Australian legal and ethical context, including the Disability
         Discrimination Act 1992 (DDA), not as a compliance checkbox, but as a reminder that exclusion is
@@ -129,13 +136,19 @@ function SecondaryResearchExpanded() {
   );
 }
 
-function CompetitorAnalysisExpanded() {
+function CompetitorAnalysisExpanded({ images }: { images: PublicFolderGalleryImage[] }) {
   return (
     <div className="rl-expanded">
       <p className="paragraph-new">
         We evaluated existing tools not just for features, but for whether they reduce cognitive load or
         accidentally increase it.
       </p>
+
+      <PublicFolderLightboxGalleryClient
+        images={images}
+        groupAriaLabel="Competitor reference designs"
+        lightboxAriaLabel="Competitor reference image"
+      />
 
       <div className="rl-competitors">
         <div className="rl-competitor">
@@ -193,7 +206,13 @@ function CompetitorAnalysisExpanded() {
   );
 }
 
-export function ResearchLandscapeCards() {
+export function ResearchLandscapeCards({
+  secondaryResearchImages,
+  competitorReferenceImages,
+}: {
+  secondaryResearchImages: PublicFolderGalleryImage[];
+  competitorReferenceImages: PublicFolderGalleryImage[];
+}) {
   const [active, setActive] = useState<'secondary' | 'competitors' | null>(null);
   const expandedRef = useRef<HTMLDivElement>(null);
 
@@ -241,7 +260,11 @@ export function ResearchLandscapeCards() {
             <button type="button" className="rl-panel__close" onClick={() => setActive(null)} aria-label="Collapse">
               ×
             </button>
-            {active === 'secondary' ? <SecondaryResearchExpanded /> : <CompetitorAnalysisExpanded />}
+            {active === 'secondary' ? (
+              <SecondaryResearchExpanded images={secondaryResearchImages} />
+            ) : (
+              <CompetitorAnalysisExpanded images={competitorReferenceImages} />
+            )}
           </div>
         </div>
       ) : null}

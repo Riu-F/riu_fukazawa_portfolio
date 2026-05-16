@@ -1,6 +1,17 @@
+import { getPublicFolderGalleryImages } from '@/lib/publicFolderGallery';
+
 import { ResearchLandscapeCards } from './research-landscape/ResearchLandscapeCards';
 
 export default function SupermarketResearchLandscape() {
+  const secondaryResearchImages = getPublicFolderGalleryImages(
+    'super-market-navigation/research/secondary',
+    'Secondary research',
+  );
+  const competitorReferenceImages = getPublicFolderGalleryImages(
+    'super-market-navigation/research/compeditors',
+    'Competitor reference',
+  );
+
   return (
     <section id="smp-section-research-landscape" className="default-section">
       <div className="default-container w-container">
@@ -11,7 +22,10 @@ export default function SupermarketResearchLandscape() {
           actually mean in a supermarket context? What&apos;s already been tried? And where are the gaps that
           no one&apos;s addressed?
         </p>
-        <ResearchLandscapeCards />
+        <ResearchLandscapeCards
+          secondaryResearchImages={secondaryResearchImages}
+          competitorReferenceImages={competitorReferenceImages}
+        />
       </div>
     </section>
   );

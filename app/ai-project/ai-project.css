@@ -1778,10 +1778,43 @@
   gap:         8px;
   align-items: start;
 }
-.aip .aip-proto-persona-btn:not([aria-selected="true"]):hover {
+.aip .aip-proto-persona-btn:not([aria-selected="true"]):not(:disabled):hover {
   border-color: #d0d0d0 !important;
   background:   #fff    !important;
 }
+
+/* Skeleton shimmer */
+@keyframes aip-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.aip .aip-proto-skeleton {
+  background:      linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation:       aip-shimmer 1.4s ease infinite;
+  border-radius:   4px;
+  display:         block;
+}
+
+/* Retry button */
+.aip .aip-proto-retry-btn {
+  display:        inline-flex;
+  align-items:    center;
+  padding:        7px 18px;
+  background:     #2a2a2a;
+  color:          #fff;
+  border:         none;
+  border-radius:  8px;
+  font-family:    'DM Mono', monospace;
+  font-size:      10px;
+  font-weight:    500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  cursor:         pointer;
+  transition:     background 180ms ease;
+}
+.aip .aip-proto-retry-btn:hover { background: #444; }
+
 @media (max-width: 640px) {
   .aip .aip-proto-cards-row {
     flex-direction: column;
@@ -1790,4 +1823,450 @@
     flex-grow: 1 !important;
     width:     100%;
   }
+}
+
+/* ── AiCheckoutHero ──────────────────────────────────────────── */
+
+/* Rainbow gradient token — used across hero accents */
+.aip {
+  --aip-rainbow: linear-gradient(90deg, #ff6a3b, #ffd166, #4ecdc4, #7b61ff, #ff6ec7);
+}
+
+/* Full-width section, white with subtle border separation */
+.aip .aip-hero {
+  background:    #fff;
+  border-top:    1px solid #eee;
+  border-bottom: 1px solid #eee;
+  width:         100%;
+  position:      relative;
+  overflow:      hidden;
+}
+
+/* Constrained inner container */
+.aip .aip-hero__inner {
+  max-width: 1440px;
+  margin:    0 auto;
+  padding:   80px 48px 80px;
+}
+
+/* Two-column layout: copy | visual */
+.aip .aip-hero__layout {
+  display:               grid;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(600px, 1.35fr);
+  gap:                   clamp(32px, 5vw, 72px);
+  align-items:           center;
+}
+
+/* Left column */
+.aip .aip-hero__copy {
+  display:        flex;
+  flex-direction: column;
+}
+
+/* Rainbow accent bar above eyebrow */
+.aip .aip-hero__accent-bar {
+  height:        2.5px;
+  width:         44px;
+  background:    var(--aip-rainbow);
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+
+/* Eyebrow */
+.aip .aip-hero__eyebrow {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  font-weight:    500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color:          #aaa;
+  margin-bottom:  14px;
+}
+
+/* Title */
+.aip .aip-hero__title {
+  font-family:    'Montserrat', sans-serif;
+  font-size:      clamp(2rem, 3.5vw, 3rem);
+  font-weight:    700;
+  line-height:    1.12;
+  color:          #111;
+  margin:         0 0 16px;
+  letter-spacing: -0.025em;
+}
+
+/* Subtitle */
+.aip .aip-hero__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size:   1rem;
+  line-height: 1.7;
+  color:       #555;
+  margin:      0 0 30px;
+  max-width:   38ch;
+}
+
+/* Interaction area */
+.aip .aip-hero__interaction {
+  padding-top:   22px;
+  border-top:    1px solid #efefef;
+  margin-bottom: 4px;
+}
+
+.aip .aip-hero__interaction-label {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  font-weight:    500;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color:          #999;
+  margin-bottom:  4px;
+}
+
+.aip .aip-hero__interaction-hint {
+  font-family:   'Inter', sans-serif;
+  font-size:     12px;
+  color:         #bbb;
+  margin:        0 0 14px;
+  line-height:   1.55;
+}
+
+/* Stacked persona buttons */
+.aip .aip-hero__personas {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.aip .aip-hero__persona-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       9px 12px;
+  background:    #fafafa;
+  border:        1.5px solid #e4e4e4;
+  border-radius: 10px;
+  cursor:        pointer;
+  text-align:    left;
+  width:         100%;
+  outline:       none;
+  transition:    border-color 220ms ease, background 220ms ease, box-shadow 220ms ease;
+}
+/* Active state: gradient border via padding-box / border-box trick */
+.aip .aip-hero__persona-btn[aria-selected="true"] {
+  background:  linear-gradient(#fff, #fff) padding-box,
+               var(--aip-rainbow) border-box;
+  border-color: transparent;
+  box-shadow:  0 2px 12px rgba(123,97,255,0.14), 0 1px 4px rgba(0,0,0,0.05);
+}
+.aip .aip-hero__persona-btn:not([aria-selected="true"]):hover {
+  border-color: #d0d0d0;
+  background:   #fff;
+}
+
+/* CTA button */
+.aip .aip-hero__cta {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           7px;
+  padding:       11px 22px;
+  margin-top:    24px;
+  background:    #111;
+  color:         #fff;
+  border:        none;
+  border-radius: 10px;
+  font-family:   'Outfit', sans-serif;
+  font-size:     13.5px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    background 180ms ease, box-shadow 200ms ease;
+  align-self:    flex-start;
+}
+.aip .aip-hero__cta:hover {
+  background: #222;
+  box-shadow: 0 0 0 3px rgba(123,97,255,0.18), 0 4px 18px rgba(123,97,255,0.18);
+}
+
+/* Demo helper label — rainbow dot via ::before */
+.aip .aip-hero__demo-badge {
+  display:        flex;
+  align-items:    center;
+  gap:            7px;
+  margin-top:     12px;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  color:          #ccc;
+  letter-spacing: 0.3px;
+}
+.aip .aip-hero__demo-badge::before {
+  content:       '';
+  display:       inline-block;
+  flex-shrink:   0;
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--aip-rainbow);
+}
+
+/* Right column: visual frame with rainbow glow behind frame */
+.aip .aip-hero__visual-frame {
+  position:  relative;
+  min-width: 0;
+}
+.aip .aip-hero__visual-frame::before {
+  content:       '';
+  position:      absolute;
+  inset:         -32px -20px;
+  background:    radial-gradient(
+    ellipse at 55% 48%,
+    rgba(255,110,199,0.09) 0%,
+    rgba(123,97,255,0.08) 28%,
+    rgba(78,205,196,0.05) 56%,
+    transparent 78%
+  );
+  pointer-events: none;
+  z-index:        0;
+  border-radius:  24px;
+}
+.aip .aip-hero__visual-frame > * {
+  position: relative;
+  z-index:  1;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .aip .aip-hero__inner {
+    padding: 64px 32px 64px;
+  }
+}
+
+@media (max-width: 900px) {
+  .aip .aip-hero__layout {
+    grid-template-columns: 1fr;
+    gap:                   36px;
+  }
+  .aip .aip-hero__subtitle { max-width: 100%; }
+  .aip .aip-hero__inner    { padding: 52px 24px 56px; }
+}
+
+/* ── Generator disclaimer note ─────────────────────────────────── */
+.aip .aip-gen-note {
+  background:    #f7f7f7;
+  border-left:   2.5px solid #e0e0e0;
+  border-radius: 0 7px 7px 0;
+  padding:       11px 14px;
+  margin-bottom: 20px;
+  font-family:   'DM Sans', system-ui, sans-serif;
+  font-size:     11.5px;
+  color:         #999;
+  line-height:   1.6;
+}
+
+/* ── AiCheckoutGenerator ─────────────────────────────────────── */
+
+/* Two-column form / output layout */
+.aip .aip-gen-layout {
+  display:               grid;
+  grid-template-columns: 360px 1fr;
+  gap:                   24px;
+  align-items:           start;
+}
+
+@media (max-width: 900px) {
+  .aip .aip-gen-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form panel card */
+.aip .aip-gen-form-panel {
+  background:    #fff;
+  border:        1px solid #e4e4e4;
+  border-radius: 14px;
+  padding:       22px;
+  box-shadow:    0 2px 20px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.03);
+}
+
+/* 2-column field grid inside form */
+.aip .aip-gen-field-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   12px;
+}
+
+.aip .aip-gen-field-full {
+  grid-column: 1 / -1;
+}
+
+/* Monospace field label */
+.aip .aip-gen-label {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  font-weight:    500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color:          #aaa;
+  margin-bottom:  5px;
+}
+.aip .aip-gen-label.required::after {
+  content: ' *';
+  color:   #d94f4f;
+}
+
+/* Text inputs */
+.aip .aip-gen-input {
+  width:         100%;
+  height:        34px;
+  padding:       0 10px;
+  background:    #fafafa;
+  border:        1px solid #e4e4e4;
+  border-radius: 7px;
+  font-family:   'DM Sans', system-ui, sans-serif;
+  font-size:     12.5px;
+  color:         #111;
+  outline:       none;
+  transition:    border-color 150ms ease, background 150ms ease;
+}
+.aip .aip-gen-input::placeholder { color: #c8c8c8; }
+.aip .aip-gen-input:focus {
+  border-color: #b0b0b0;
+  background:   #fff;
+}
+.aip .aip-gen-input.error { border-color: #d94f4f; }
+
+/* Select wrapper */
+.aip .aip-gen-select-wrap { position: relative; }
+.aip .aip-gen-select-wrap::after {
+  content:        '';
+  position:       absolute;
+  right:          10px;
+  top:            50%;
+  transform:      translateY(-50%);
+  width:          0;
+  height:         0;
+  border-left:    4px solid transparent;
+  border-right:   4px solid transparent;
+  border-top:     4px solid #c0c0c0;
+  pointer-events: none;
+}
+.aip .aip-gen-select {
+  width:         100%;
+  height:        34px;
+  padding:       0 28px 0 10px;
+  background:    #fafafa;
+  border:        1px solid #e4e4e4;
+  border-radius: 7px;
+  font-family:   'DM Sans', system-ui, sans-serif;
+  font-size:     12.5px;
+  color:         #111;
+  outline:       none;
+  appearance:    none;
+  cursor:        pointer;
+  transition:    border-color 150ms ease, background 150ms ease;
+}
+.aip .aip-gen-select:focus {
+  border-color: #b0b0b0;
+  background:   #fff;
+}
+.aip .aip-gen-select option[value=""] { color: #bbb; }
+
+/* Inline validation error */
+.aip .aip-gen-field-error {
+  margin-top:  4px;
+  font-size:   11px;
+  color:       #d94f4f;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  line-height: 1.4;
+}
+
+/* Submit button */
+.aip .aip-gen-submit-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             7px;
+  width:           100%;
+  height:          38px;
+  margin-top:      16px;
+  background:      #2a2a2a;
+  color:           #fff;
+  border:          none;
+  border-radius:   9px;
+  font-family:     'DM Mono', monospace;
+  font-size:       10px;
+  font-weight:     500;
+  letter-spacing:  0.8px;
+  text-transform:  uppercase;
+  cursor:          pointer;
+  transition:      background 180ms ease, opacity 180ms ease;
+}
+.aip .aip-gen-submit-btn:hover:not(:disabled) { background: #444; }
+.aip .aip-gen-submit-btn:disabled {
+  opacity: 0.55;
+  cursor:  default;
+}
+
+/* Spinner inside button */
+@keyframes aip-spin {
+  to { transform: rotate(360deg); }
+}
+.aip .aip-gen-spinner {
+  width:            11px;
+  height:           11px;
+  border:           1.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius:    50%;
+  animation:        aip-spin 0.7s linear infinite;
+  flex-shrink:      0;
+}
+
+/* Idle placeholder (right panel, no output yet) */
+.aip .aip-gen-idle {
+  border-radius: 14px;
+  border:        1px solid #e4e4e4;
+  box-shadow:    0 2px 20px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.03);
+  background:    #fff;
+  min-height:    320px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+}
+.aip .aip-gen-idle-inner {
+  text-align:     center;
+  padding:        32px 24px;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            10px;
+}
+.aip .aip-gen-idle-icon {
+  width:           40px;
+  height:          40px;
+  border-radius:   50%;
+  background:      #f5f5f5;
+  border:          1px solid #ebebeb;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+.aip .aip-gen-idle-text {
+  font-family:    'DM Mono', monospace;
+  font-size:      10.5px;
+  color:          #c0c0c0;
+  letter-spacing: 0.2px;
+  line-height:    1.6;
+  max-width:      200px;
+}
+
+/* Section label above form */
+.aip .aip-gen-section-label {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9.5px;
+  font-weight:    500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color:          #bbb;
+  margin-bottom:  14px;
 }

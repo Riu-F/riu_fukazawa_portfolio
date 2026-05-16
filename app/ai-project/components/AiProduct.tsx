@@ -1,6 +1,6 @@
 'use client';
 
-import AiCheckoutPrototype from './AiCheckoutPrototype';
+import AiCheckoutPreview from './AiCheckoutPreview';
 
 export default function AiProduct() {
   return (
@@ -16,7 +16,7 @@ export default function AiProduct() {
 
       <div className="div-block-26">
         <div className="default-container w-container" style={{ maxWidth: '100%', padding: '0 2rem' }}>
-          <AiCheckoutPrototype />
+          <AiCheckoutPreview />
         </div>
       </div>
     </section>

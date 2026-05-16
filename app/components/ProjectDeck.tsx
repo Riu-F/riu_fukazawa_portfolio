@@ -30,6 +30,7 @@ import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { DECK_CARDS, type DeckCard, type DeckTag } from '../lib/deckData';
 import AICheckoutDemo from './AICheckoutDemo';
 import DeckFoodHubMini from './DeckFoodHubMini';
+import KoiPond from './KoiPond';
 
 /* ── Tag chips — GitHub-style pills mirroring the supermarket case study ── */
 
@@ -115,10 +116,10 @@ const TAB_THEMES: TabTheme[] = [
     activeColor: '#fff',
     activeBorder: 'transparent',
   },
-  /* 2 — Age of AI: grey gradient */
+  /* 2 — Interactive Art: muted forest green → teal (pond palette) */
   {
-    activeBg:    'linear-gradient(120deg, #374151 0%, #6b7280 50%, #d1d5db 100%)',
-    activeColor: '#f9fafb',
+    activeBg:    'linear-gradient(120deg, #1a3a2a 0%, #2a6060 100%)',
+    activeColor: '#e8f2ec',
     activeBorder: 'transparent',
   },
 ];
@@ -254,7 +255,7 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
           const theme    = TAB_THEMES[card.id];
           const hasLink  = Boolean(card.href);
           const Wrapper  = (hasLink && card.id !== 0 ? 'a' : 'div') as 'a' | 'div';
-          const wrapperProps = hasLink && card.id !== 0
+          const wrapperProps = hasLink && card.id !== 0 && card.id !== 2
             ? { href: card.href }
             : {};
           return (
@@ -336,6 +337,29 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
                       <a
                         href={card.href}
                         className={`deck-btn${card.id === 0 ? ' deck-btn--sentence' : ''}`}
+                        style={{ marginTop: 18, display: 'inline-block' }}
+                      >
+                        {card.btn}
+                      </a>
+                    ) : null}
+                  </>
+                ) : card.id === 2 ? (
+                  <>
+                    <div style={{
+                      marginTop:    18,
+                      width:        '100%',
+                      aspectRatio:  '3 / 2',
+                      borderRadius: 10,
+                      overflow:     'hidden',
+                      background:   '#0a1a12',
+                      boxShadow:    '0 1px 4px rgba(0,0,0,0.1)',
+                    }}>
+                      <KoiPond />
+                    </div>
+                    {card.href && card.btn ? (
+                      <a
+                        href={card.href}
+                        className="deck-btn deck-btn--sentence"
                         style={{ marginTop: 18, display: 'inline-block' }}
                       >
                         {card.btn}
@@ -539,7 +563,90 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
 
         {/* ── Active card content ── */}
         {isFront && (
-          card.id === 1 ? (
+          card.id === 2 ? (
+            <div style={{
+              flex:         1,
+              minHeight:    0,
+              display:      'flex',
+              alignItems:   'stretch',
+              opacity:      show ? 1 : 0,
+              transform:    show ? 'translateY(0)' : 'translateY(9px)',
+              transition:   'opacity 0.34s ease, transform 0.34s ease',
+              overflow:     'hidden',
+            }}>
+
+              <div style={{
+                width:          '36%',
+                flexShrink:     0,
+                alignSelf:      'stretch',
+                display:        'flex',
+                flexDirection:  'column',
+                justifyContent: 'center',
+                padding:        '22px 32px 26px 48px',
+              }}>
+                <p style={{
+                  fontFamily:    "'Inter', sans-serif",
+                  fontSize:      '1rem',
+                  fontWeight:    400,
+                  lineHeight:    '1.6em',
+                  color:         '#888',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 0.5rem',
+                }}>
+                  {card.sub}
+                </p>
+                <h2 style={{
+                  fontFamily:    "'Montserrat', sans-serif",
+                  fontSize:      '2rem',
+                  fontWeight:    700,
+                  lineHeight:    1.275,
+                  color:         '#111',
+                  textTransform: 'capitalize',
+                  margin:        '0 0 1.25rem',
+                  paddingBottom: 10,
+                  whiteSpace:    'pre-line',
+                }}>
+                  {card.heading}
+                </h2>
+                <p style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize:   '1rem',
+                  fontWeight: 400,
+                  lineHeight: '1.6em',
+                  color:      '#444',
+                  margin:     '0 0 1.25rem',
+                }}>
+                  {card.body}
+                </p>
+                {card.btn && card.href && (
+                  <a href={card.href} className="deck-btn deck-btn--sentence">
+                    {card.btn}
+                  </a>
+                )}
+              </div>
+
+              <div style={{
+                flex:           1,
+                minWidth:       0,
+                minHeight:      0,
+                display:        'flex',
+                padding:        16,
+                background:     '#ffffff',
+              }}>
+                <div style={{
+                  flex:         1,
+                  minHeight:    0,
+                  position:     'relative',
+                  overflow:     'hidden',
+                  borderRadius: 5,
+                  background:   '#0a1a12',
+                  boxShadow:    '0 1px 4px rgba(0,0,0,0.1)',
+                }}>
+                  {show && <KoiPond />}
+                </div>
+              </div>
+            </div>
+          ) : card.id === 1 ? (
             /* AI project — two-column split: left text / right demo */
             <div style={{
               flex:         1,

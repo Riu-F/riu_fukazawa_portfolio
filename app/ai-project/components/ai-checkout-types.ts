@@ -44,3 +44,18 @@ export interface Persona {
   traits:   string;
   iconName: string;
 }
+
+/* Live trip context — collected from user-entered form data */
+export interface TripContext {
+  destination:       string;   /* required */
+  name?:             string;
+  countryOrigin?:    string;
+  tripDates?:        string;
+  lengthOfStay?:     string;
+  ageRange?:         string;
+  travelPurpose?:    string;
+  travelExperience?: string;
+  interests?:        string;
+  budgetLevel?:      string;
+  groupType?:        string;
+}

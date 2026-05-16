@@ -1,4 +1,7 @@
-import type { Persona, CheckoutData } from './ai-checkout-types';
+import type { Persona, CheckoutData, TripContext } from './ai-checkout-types';
+
+/* Set to true to bypass the API and return mock data instantly (development only) */
+export const USE_MOCK_CHECKOUT = false;
 
 /* ── Input: persona selector ────────────────────────────────────── */
 export const PERSONAS: Persona[] = [
@@ -293,13 +296,56 @@ const MOCK_DATA: Record<string, CheckoutData> = {
   },
 };
 
-/* ── generateCheckout ────────────────────────────────────────────
-   Placeholder — replace body with:
-     const res = await fetch('/api/generate', {
-       method: 'POST', body: JSON.stringify({ personaId })
-     });
-     return res.json() as CheckoutData;
+/* ── getMockCheckout — synchronous accessor for demo mode ────────
+   Returns the pre-written mock data for a given personaId.
+   Used by AiCheckoutPreview so it never touches the API.
 ──────────────────────────────────────────────────────────────── */
-export function generateCheckout(personaId: string): CheckoutData {
-  return MOCK_DATA[personaId];
+export function getMockCheckout(personaId: string): CheckoutData {
+  const data = MOCK_DATA[personaId];
+  if (!data) throw new Error(`No mock data for personaId "${personaId}".`);
+  return data;
+}
+
+/* ── generateCheckout ────────────────────────────────────────────
+   Accepts either { personaId } or { tripContext } + optional signal.
+
+   USE_MOCK_CHECKOUT only applies to personaId mode — tripContext
+   always hits the real API so arbitrary user input is handled live.
+
+   The AbortSignal is forwarded so stale requests cancel cleanly.
+──────────────────────────────────────────────────────────────── */
+export type GenerateOpts =
+  | { personaId: string;       tripContext?: never; signal?: AbortSignal }
+  | { tripContext: TripContext; personaId?:  never; signal?: AbortSignal };
+
+export async function generateCheckout(opts: GenerateOpts): Promise<CheckoutData> {
+  const { signal } = opts;
+
+  if ('personaId' in opts && USE_MOCK_CHECKOUT) {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(resolve, 350);
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    });
+    return getMockCheckout(opts.personaId as string);
+  }
+
+  const body = 'personaId' in opts
+    ? { personaId: opts.personaId }
+    : { tripContext: opts.tripContext };
+
+  const res = await fetch('/api/generate', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+    signal,
+  });
+
+  const json = (await res.json()) as { ok: boolean; checkout?: CheckoutData; error?: string };
+  if (!json.ok || !json.checkout) {
+    throw new Error(json.error ?? `Request failed (${res.status}).`);
+  }
+  return json.checkout;
 }

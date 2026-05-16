@@ -47,8 +47,12 @@ const METHODS: Method[] = [
 
 export function PrimaryResearchMethodsClient({
   observationImages,
+  interviewImages,
+  surveyImages,
 }: {
   observationImages: PublicFolderGalleryImage[];
+  interviewImages: PublicFolderGalleryImage[];
+  surveyImages: PublicFolderGalleryImage[];
 }) {
   const [active, setActive] = useState<MethodId>('interviews');
   const panelRef = useRef<HTMLDivElement>(null);
@@ -70,6 +74,11 @@ export function PrimaryResearchMethodsClient({
             findings into four areas: Navigating Stores, Signage, Reducing Cognitive Load, and the broader
             Shopping Experience.
           </p>
+          <PublicFolderLightboxGalleryClient
+            images={interviewImages}
+            groupAriaLabel="Interview transcript excerpts"
+            lightboxAriaLabel="Interview transcript image"
+          />
           <a className="pr-link" href={SAMPLE_TRANSCRIPT_URL} target="_blank" rel="noopener noreferrer">
             View sample transcript
           </a>
@@ -191,6 +200,12 @@ export function PrimaryResearchMethodsClient({
             people who shop regularly, making the findings reflective of everyday supermarket experiences
             rather than edge cases.
           </p>
+
+          <PublicFolderLightboxGalleryClient
+            images={surveyImages}
+            groupAriaLabel="Survey charts and results"
+            lightboxAriaLabel="Survey result image"
+          />
 
           <div className="pr-accordion">
             <ProjectDetailsAccordion title="Survey findings">

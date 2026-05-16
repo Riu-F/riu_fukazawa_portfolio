@@ -46,10 +46,12 @@ export const DECK_CARDS: DeckCard[] = [
   },
   {
     id:      2,
-    tab:     'Age of AI',
+    tab:     'Interactive Art',
     num:     '03',
-    heading: 'Designing in an\nAge of AI',
-    sub:     'Essay · Reflection · Practice',
-    body:    'Exploring what it means to design in a world where AI is a creative collaborator.',
+    heading: 'Pixel Koi Pond',
+    sub:     'Interactive Canvas Artwork',
+    body:    'A pixel art koi pond, rebuilt from a first-year university project. Click to disturb the water.',
+    btn:     'Dive In →',
+    href:    '/404',
   },
 ];

@@ -60,8 +60,10 @@ export function getPublicFolderGalleryImages(
   return files.map((filename) => {
     const human = humanizeFilenameForAlt(filename);
     const alt = altPrefix ? `${altPrefix}: ${human}` : human;
+    const pathSegments = [...normalized.split('/'), filename];
+    const src = `/${pathSegments.map(encodeURIComponent).join('/')}`;
     return {
-      src: `/${normalized}/${filename}`.replace(/\/+/g, '/'),
+      src,
       alt,
     };
   });
