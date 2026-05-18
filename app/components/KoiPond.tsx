@@ -8,11 +8,11 @@
   mechanics (click/swipe/rain/flee) are unchanged from prior iterations.
 
   Draw order (back → front):
-    water base + caustics → sparkles → pad stems → fish (+ wakes) →
-    lily pads → flowers → reeds → ripples
+    water + caustics → sparkles → light patches → stems → rain ripples →
+    fish → food pellets → pads + flowers → reeds → user/swipe ripples
 */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /* ── Config ────────────────────────────────────────────────────────── */
 /* Base authored resolution — callers override via `resolution` prop. */
@@ -90,6 +90,7 @@ function traceKoiBody(c: CanvasRenderingContext2D, s: number) {
 }
 
 const WAKE_COLOR: Vec3 = [100, 160, 180];
+const FOOD_COLOR: Vec3 = [180, 140, 80];
 
 /* ── Utilities ─────────────────────────────────────────────────────── */
 const lerp  = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -290,6 +291,48 @@ class Ripple {
   }
 
   get alive() { return this.life > 0; }
+}
+
+/* ── Fish food pellet ──────────────────────────────────────────────── */
+class FoodPellet {
+  x: number;
+  y: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  eaten: boolean;
+  sinkPhase: number;
+
+  constructor(x: number, y: number, scale: number) {
+    this.x         = x + rand(-3, 3) * scale;
+    this.y         = y + rand(-3, 3) * scale;
+    this.life      = 1;
+    this.maxLife   = rand(6, 10);
+    this.size      = rand(1, 2) * scale;
+    this.eaten     = false;
+    this.sinkPhase = rand(0, Math.PI * 2);
+  }
+
+  update(dt: number) {
+    if (this.eaten) return;
+    this.life -= dt / this.maxLife;
+  }
+
+  draw(c: CanvasRenderingContext2D, t: number) {
+    if (this.eaten || this.life <= 0) return;
+    const bobX = Math.sin(t * 2.1 + this.sinkPhase) * 0.35;
+    const bobY = Math.cos(t * 1.6 + this.sinkPhase) * 0.25;
+    c.save();
+    c.translate(this.x + bobX, this.y + bobY);
+    c.scale(1, RIPPLE_SQUASH);
+    c.beginPath();
+    c.arc(0, 0, this.size, 0, Math.PI * 2);
+    c.fillStyle = rgb(FOOD_COLOR, clamp(this.life, 0, 1) * 0.92);
+    c.fill();
+    c.restore();
+  }
+
+  get alive() { return !this.eaten && this.life > 0; }
 }
 
 /* ── Lily Pad ──────────────────────────────────────────────────────── */
@@ -525,6 +568,7 @@ class LilyFlower {
 
     c.save();
     c.translate(xx, yy);
+    c.scale(1, RIPPLE_SQUASH);
     for (let i = 0; i < this.petals; i++) {
       const a = (i / this.petals) * Math.PI * 2 + this.phase;
       c.save();
@@ -641,6 +685,8 @@ class Fish {
   depth: number;
   solidColor: boolean;
   patches: KoiPatch[];
+  satisfiedTimer = 0;
+  private foodTarget: FoodPellet | null = null;
 
   constructor(b: Bounds, tier: 'hero' | 'medium' | 'small') {
     /* Spawn in open central channel */
@@ -725,15 +771,48 @@ class Fish {
     this.fleeVy += (dy / d) * force;
   }
 
-  update(dt: number, smoothNoise: SmoothNoise, b: Bounds) {
+  update(dt: number, smoothNoise: SmoothNoise, b: Bounds, food: FoodPellet[]) {
+    this.foodTarget = null;
+    let nearestFood = Infinity;
+
+    let speedMult = 1;
+    if (this.satisfiedTimer > 0) {
+      this.satisfiedTimer -= dt;
+      speedMult = 0.5;
+    } else {
+      for (const p of food) {
+        if (!p.alive) continue;
+        const d = dist(this.x, this.y, p.x, p.y);
+        if (d < sc(b, 75) && d < nearestFood) {
+          nearestFood = d;
+          this.foodTarget = p;
+        }
+      }
+    }
+
+    if (this.foodTarget) {
+      const angleToFood = Math.atan2(this.foodTarget.y - this.y, this.foodTarget.x - this.x);
+      let diff = angleToFood - this.wanderAngle;
+      while (diff >  Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      this.wanderAngle += diff * 0.12;
+      speedMult = 1.4;
+      if (nearestFood < sc(b, 5)) {
+        this.foodTarget.eaten = true;
+        this.satisfiedTimer = 1;
+        this.foodTarget = null;
+        speedMult = 0.5;
+      }
+    }
+
     this.wanderT += dt * 0.4;
     const wanderInfluence = smoothNoise(this.wanderT) * 2 - 1;
-    this.wanderAngle += wanderInfluence * 0.04;
+    this.wanderAngle += wanderInfluence * (this.foodTarget ? 0.015 : 0.04);
 
     this.speedT += dt * 0.3;
     const speedNoise = smoothNoise(this.speedT + 500);
     this.baseSpeed   = lerp(this.minCruise, this.maxCruise, speedNoise);
-    this.baseSpeed  *= 0.7 + this.depth * 0.3;
+    this.baseSpeed  *= (0.7 + this.depth * 0.3) * speedMult;
 
     const margin = sc(b, 36);
     let avoidX = 0;
@@ -1016,19 +1095,19 @@ function scatterMidZonePads(
     const pad = new LilyPad(b, {
       x: rand(b.w * 0.2, b.w * 0.8),
       y: rand(b.h * 0.2, b.h * 0.8),
-      r: rand(5, 12),
+      r: rand(4, 10),
     });
     pads.push(pad);
     midPads.push(pad);
   }
-  const flowerCount = randInt(2, 3);
+  const flowerCount = randInt(3, 5);
   for (let i = 0; i < flowerCount && midPads.length > 0; i++) {
     flowers.push(new LilyFlower(midPads[Math.floor(Math.random() * midPads.length)], b));
   }
 }
 
 function scatterMidReedTufts(b: Bounds, reeds: Reed[]) {
-  const tuftCount = randInt(2, 3);
+  const tuftCount = randInt(4, 6);
   for (let t = 0; t < tuftCount; t++) {
     const cx = rand(b.w * 0.25, b.w * 0.75);
     const cy = rand(b.h * 0.25, b.h * 0.75);
@@ -1076,7 +1155,7 @@ function createScene(b: Bounds) {
   addCluster(0.92, 0.86, randInt(10, 15), sc(b, 22), { x: b.w - sc(b, 4), y: b.h * 0.86 });
   addCluster(0.50, 0.94, randInt(6, 8),   sc(b, 18), { x: b.w * 0.5, y: b.h - sc(b, 4) });
 
-  scatterMidZonePads(b, lilyPads, lilyFlowers, randInt(10, 15));
+  scatterMidZonePads(b, lilyPads, lilyFlowers, randInt(20, 30));
 
   const padStems = createStems(clusterMeta, b);
 
@@ -1167,12 +1246,28 @@ function makeBounds(width: number, height: number): Bounds {
   return { w: width, h: height, scale: width / BASE_CANVAS_W };
 }
 
+function sizeFromContainer(
+  containerW: number,
+  containerH: number,
+  baseHeight: number,
+): { width: number; height: number } | null {
+  if (containerW < 2 || containerH < 2) return null;
+  const height = baseHeight;
+  const width  = Math.max(2, Math.round(height * (containerW / containerH)));
+  return { width, height };
+}
+
 /* ── Component ─────────────────────────────────────────────────────── */
 
 interface KoiPondProps {
   className?: string;
   style?:     React.CSSProperties;
   pixelFilter?: boolean;
+  /** When true (default), internal resolution tracks container aspect via ResizeObserver. */
+  fillContainer?: boolean;
+  /** Pixel height used to derive width from container aspect (default 320). */
+  baseHeight?: number;
+  /** Fixed resolution; only used when fillContainer is false. */
   resolution?: { width: number; height: number };
 }
 
@@ -1180,17 +1275,45 @@ export default function KoiPond({
   className,
   style,
   pixelFilter = false,
-  resolution = DEFAULT_RESOLUTION,
+  fillContainer = true,
+  baseHeight = BASE_CANVAS_H,
+  resolution,
 }: KoiPondProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef    = useRef<HTMLCanvasElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number } | null>(null);
+
+  /* Measure container → canvas pixel dimensions (no CSS stretch distortion). */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const { width: cw, height: ch } = el.getBoundingClientRect();
+      if (fillContainer) {
+        const next = sizeFromContainer(cw, ch, baseHeight);
+        if (next) setCanvasSize(next);
+      } else if (resolution) {
+        setCanvasSize({ width: resolution.width, height: resolution.height });
+      } else {
+        setCanvasSize(DEFAULT_RESOLUTION);
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fillContainer, baseHeight, resolution?.width, resolution?.height]);
 
   useEffect(() => {
+    if (!canvasSize) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bounds = makeBounds(resolution.width, resolution.height);
+    const bounds = makeBounds(canvasSize.width, canvasSize.height);
     const causticStep = Math.max(4, Math.round(CAUSTIC_STEP * bounds.scale));
     canvas.width  = bounds.w;
     canvas.height = bounds.h;
@@ -1198,6 +1321,7 @@ export default function KoiPond({
     const smoothNoise = makeSmoothNoise();
     const { lilyPads, lilyFlowers, reeds, fish, sparkles, padStems, lightPatches } = createScene(bounds);
     const ripples: Ripple[] = [];
+    const foodPellets: FoodPellet[] = [];
 
     let offCtx: CanvasRenderingContext2D | null = null;
     if (pixelFilter) {
@@ -1214,27 +1338,49 @@ export default function KoiPond({
     let lastMouseTime      = 0;
     let mouseSwipeCooldown = 0;
 
+    let pointerDown     = false;
+    let pointerDownTime = 0;
+    let pointerIsHold   = false;
+    let lastFoodDrop    = 0;
+    let pointerX        = 0;
+    let pointerY        = 0;
+
     function getCanvasCoords(e: MouseEvent | PointerEvent) {
-      const r      = canvas!.getBoundingClientRect();
-      const scaleX = bounds.w / r.width;
-      const scaleY = bounds.h / r.height;
+      const r     = canvas!.getBoundingClientRect();
+      const scale = bounds.w / r.width;
       return {
-        x: (e.clientX - r.left) * scaleX,
-        y: (e.clientY - r.top)  * scaleY,
+        x: (e.clientX - r.left) * scale,
+        y: (e.clientY - r.top)  * scale,
       };
     }
 
-    function handleClick(e: MouseEvent) {
-      const { x: mx, y: my } = getCanvasCoords(e);
-      ripples.push(new Ripple(mx, my, 'user', bounds.scale));
-      for (const f of fish) {
-        if (dist(f.x, f.y, mx, my) < sc(bounds, 100)) f.flee(mx, my, 15);
-      }
+    function handlePointerDown(e: PointerEvent) {
+      canvas!.setPointerCapture(e.pointerId);
+      const { x, y } = getCanvasCoords(e);
+      pointerDown     = true;
+      pointerIsHold   = false;
+      pointerDownTime = performance.now() / 1000;
+      lastFoodDrop    = 0;
+      pointerX        = x;
+      pointerY        = y;
     }
 
     function handlePointerMove(e: PointerEvent) {
       const { x: mx, y: my } = getCanvasCoords(e);
       const now = performance.now() / 1000;
+
+      if (pointerDown) {
+        pointerX = mx;
+        pointerY = my;
+        if (now - pointerDownTime > 0.2) {
+          pointerIsHold = true;
+          if (lastFoodDrop === 0 || now - lastFoodDrop >= 0.25) {
+            foodPellets.push(new FoodPellet(mx, my, bounds.scale));
+            lastFoodDrop = now;
+          }
+        }
+        return;
+      }
 
       if (lastMouseX !== null && lastMouseY !== null) {
         const dx       = mx - lastMouseX;
@@ -1257,8 +1403,24 @@ export default function KoiPond({
       lastMouseTime = now;
     }
 
-    canvas.addEventListener('click', handleClick);
+    function handlePointerUp() {
+      const now = performance.now() / 1000;
+      if (pointerDown && !pointerIsHold && now - pointerDownTime < 0.2) {
+        ripples.push(new Ripple(pointerX, pointerY, 'user', bounds.scale));
+        for (const f of fish) {
+          if (dist(f.x, f.y, pointerX, pointerY) < sc(bounds, 100)) {
+            f.flee(pointerX, pointerY, 15);
+          }
+        }
+      }
+      pointerDown   = false;
+      pointerIsHold = false;
+    }
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
 
     let raf      = 0;
     let lastTime = performance.now();
@@ -1279,7 +1441,16 @@ export default function KoiPond({
       }
       if (mouseSwipeCooldown > 0) mouseSwipeCooldown -= dt;
 
-      /* 1 — dark water + caustics + drifting light */
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        ripples[i].update(dt);
+        if (!ripples[i].alive) ripples.splice(i, 1);
+      }
+      for (let i = foodPellets.length - 1; i >= 0; i--) {
+        foodPellets[i].update(dt);
+        if (!foodPellets[i].alive) foodPellets.splice(i, 1);
+      }
+
+      /* 1 — water + caustics */
       const waterPalettes = getWaterPalettes(time);
       ctx!.fillStyle = rgb(waterPalettes.deep);
       ctx!.fillRect(0, 0, bounds.w, bounds.h);
@@ -1294,36 +1465,42 @@ export default function KoiPond({
           }
         }
       }
-      drawLightPatches(ctx!, lightPatches, time);
 
       /* 2 — sparkles */
       drawSparkles(ctx!, sparkles, time);
 
-      /* 3 — lily pad stems */
+      /* 3 — drifting light */
+      drawLightPatches(ctx!, lightPatches, time);
+
+      /* 4 — stems */
       for (const stem of padStems) stem.draw(ctx!, time, ripples);
 
-      /* 4 — fish (+ wakes drawn inside each fish) */
+      /* 5 — rain ripples (under vegetation) */
+      for (const rip of ripples) {
+        if (rip.type === 'rain') rip.draw(ctx!);
+      }
+
+      /* 6 — fish */
       for (const f of fish) {
-        f.update(dt, smoothNoise, bounds);
+        f.update(dt, smoothNoise, bounds, foodPellets);
         ctx!.globalAlpha = 0.35 + f.depth * 0.55;
         f.draw(ctx!, time);
         ctx!.globalAlpha = 1;
       }
 
-      /* 5 — lily pads */
-      for (const pad of lilyPads) pad.draw(ctx!, time, ripples);
+      /* 7 — food pellets */
+      for (const pellet of foodPellets) pellet.draw(ctx!, time);
 
-      /* 6 — flowers */
+      /* 8 — pads + flowers */
+      for (const pad of lilyPads) pad.draw(ctx!, time, ripples);
       for (const flower of lilyFlowers) flower.draw(ctx!, time, ripples);
 
-      /* 7 — reeds */
+      /* 9 — reeds */
       for (const r of reeds) r.draw(ctx!, time);
 
-      /* 8 — ripples */
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        ripples[i].update(dt);
-        ripples[i].draw(ctx!);
-        if (!ripples[i].alive) ripples.splice(i, 1);
+      /* 10 — user / swipe ripples (on top) */
+      for (const rip of ripples) {
+        if (rip.type !== 'rain') rip.draw(ctx!);
       }
 
       if (offCtx) applyPixelFilter(ctx!, offCtx, canvas!, bounds.w, bounds.h);
@@ -1335,25 +1512,37 @@ export default function KoiPond({
 
     return () => {
       cancelAnimationFrame(raf);
-      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [pixelFilter, resolution.width, resolution.height]);
+  }, [canvasSize, pixelFilter]);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       className={className}
       style={{
-        display:        'block',
-        width:          '100%',
-        height:         '100%',
-        cursor:         'pointer',
-        imageRendering: 'pixelated',
-        background:     '#080e18',
-        touchAction:    'none',
+        position: 'relative',
+        width:    '100%',
+        height:   '100%',
+        overflow: 'hidden',
         ...style,
       }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display:        'block',
+          width:          '100%',
+          height:         '100%',
+          cursor:         'pointer',
+          imageRendering: 'pixelated',
+          background:     '#080e18',
+          touchAction:    'none',
+        }}
+      />
+    </div>
   );
 }

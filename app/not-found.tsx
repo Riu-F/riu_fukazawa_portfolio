@@ -1,37 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import KoiPond from './components/KoiPond';
 
-const RES_DESKTOP = { width: 720, height: 480 };
-const RES_MOBILE  = { width: 480, height: 320 };
+const TEXT_SHADOW = '0 1px 6px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.4)';
 
 export default function NotFound() {
-  const [resolution, setResolution] = useState(RES_DESKTOP);
-
-  useEffect(() => {
-    const pick = () => {
-      setResolution(window.innerWidth < 768 ? RES_MOBILE : RES_DESKTOP);
-    };
-    pick();
-    window.addEventListener('resize', pick);
-    return () => window.removeEventListener('resize', pick);
-  }, []);
-
   return (
     <main
       style={{
-        position:   'relative',
-        width:      '100vw',
-        height:     '100vh',
-        overflow:   'hidden',
-        margin:     0,
-        padding:    0,
+        position: 'relative',
+        width:    '100vw',
+        height:   '100vh',
+        overflow: 'hidden',
+        margin:   0,
+        padding:  0,
       }}
     >
       <KoiPond
-        resolution={resolution}
+        baseHeight={480}
         style={{
           position: 'fixed',
           inset:    0,
@@ -55,15 +42,10 @@ export default function NotFound() {
       >
         <div
           style={{
-            background:             'rgba(0, 0, 0, 0.3)',
-            backdropFilter:         'blur(10px)',
-            WebkitBackdropFilter:   'blur(10px)',
-            borderRadius:           16,
-            padding:                'clamp(24px, 5vw, 40px) clamp(32px, 6vw, 48px)',
-            textAlign:              'center',
-            pointerEvents:          'none',
-            maxWidth:               420,
-            margin:                 '0 1.25rem',
+            textAlign:     'center',
+            pointerEvents: 'none',
+            maxWidth:      420,
+            margin:        '0 1.25rem',
           }}
         >
           <p
@@ -75,6 +57,7 @@ export default function NotFound() {
               color:         'rgba(255, 255, 255, 0.9)',
               margin:        '0 0 1rem',
               letterSpacing: '-0.02em',
+              textShadow:    TEXT_SHADOW,
             }}
           >
             404
@@ -86,41 +69,30 @@ export default function NotFound() {
               fontWeight: 400,
               lineHeight: 1.4,
               color:      'rgba(255, 255, 255, 0.8)',
-              margin:     '0 0 1.25rem',
+              margin:     '0 0 1.5rem',
+              textShadow: TEXT_SHADOW,
             }}
           >
             This page drifted away.
           </p>
-          <p
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize:   'clamp(14px, 3.2vw, 16px)',
-              fontWeight: 300,
-              fontStyle:  'italic',
-              lineHeight: 1.5,
-              color:      'rgba(255, 255, 255, 0.6)',
-              margin:     '0 0 1.5rem',
-            }}
-          >
-            Click anywhere to make ripples while you&apos;re here.
-          </p>
           <Link
             href="/"
             style={{
-              display:        'inline-block',
-              fontFamily:     "'Inter', sans-serif",
-              fontSize:       'clamp(14px, 3.2vw, 16px)',
-              fontWeight:     400,
-              color:          'rgba(255, 255, 255, 0.7)',
-              textDecoration: 'underline',
+              display:             'inline-block',
+              fontFamily:          "'Inter', sans-serif",
+              fontSize:            'clamp(14px, 3.2vw, 16px)',
+              fontWeight:          400,
+              color:               'rgba(255, 255, 255, 0.7)',
+              textDecoration:      'underline',
               textUnderlineOffset: '0.2em',
-              pointerEvents:  'auto',
-              transition:     'color 0.2s ease',
+              pointerEvents:       'auto',
+              textShadow:          TEXT_SHADOW,
+              transition:          'color 0.2s ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255, 255, 255, 1)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'; }}
           >
-            ← Back to Shore
+            ← Back to Home
           </Link>
         </div>
       </div>
