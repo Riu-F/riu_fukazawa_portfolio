@@ -20,11 +20,11 @@ const BASE_CANVAS_W   = 480;
 const BASE_CANVAS_H   = 320;
 const DEFAULT_RESOLUTION = { width: BASE_CANVAS_W, height: BASE_CANVAS_H };
 const PIXEL_SIZE      = 5;
-const CAUSTIC_STEP    = 8;
-const RIPPLE_SQUASH   = 0.75; /* match lily-pad Y perspective */
-const NUM_SPARKLES    = 48;
-const NUM_FLOWERS     = 12;
-
+const CAUSTIC_STEP           = 16;
+const WATER_UPDATE_INTERVAL  = 5;
+const MAX_RAIN_RIPPLES       = 15;
+const RIPPLE_SQUASH          = 0.75; /* match lily-pad Y perspective */
+const NUM_SPARKLES           = 48;
 /* ── Palette ───────────────────────────────────────────────────────── */
 type Vec3   = [number, number, number];
 type Bounds = { w: number; h: number; scale: number };
@@ -79,14 +79,76 @@ const colorsEqual = (a: Vec3, b: Vec3) =>
   a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
 
 /** Closed bezier koi silhouette in local space (+x = nose). */
-function traceKoiBody(c: CanvasRenderingContext2D, s: number) {
-  c.beginPath();
-  c.moveTo(s * 0.45, 0);
-  c.bezierCurveTo(s * 0.35, -s * 0.2, s * 0.1, -s * 0.28, -s * 0.2, -s * 0.18);
-  c.bezierCurveTo(-s * 0.35, -s * 0.12, -s * 0.48, -s * 0.06, -s * 0.5, 0);
-  c.bezierCurveTo(-s * 0.48, s * 0.06, -s * 0.35, s * 0.12, -s * 0.2, s * 0.18);
-  c.bezierCurveTo(s * 0.1, s * 0.28, s * 0.35, s * 0.2, s * 0.45, 0);
-  c.closePath();
+function buildKoiBodyPath(s: number): Path2D {
+  const path = new Path2D();
+  path.moveTo(s * 0.45, 0);
+  path.bezierCurveTo(s * 0.35, -s * 0.2, s * 0.1, -s * 0.28, -s * 0.2, -s * 0.18);
+  path.bezierCurveTo(-s * 0.35, -s * 0.12, -s * 0.48, -s * 0.06, -s * 0.5, 0);
+  path.bezierCurveTo(-s * 0.48, s * 0.06, -s * 0.35, s * 0.12, -s * 0.2, s * 0.18);
+  path.bezierCurveTo(s * 0.1, s * 0.28, s * 0.35, s * 0.2, s * 0.45, 0);
+  path.closePath();
+  return path;
+}
+
+function filterDisplacementRipples(ripples: Ripple[]): Ripple[] {
+  const out: Ripple[] = [];
+  for (const r of ripples) {
+    if (r.life <= 0.05 || r.radius <= 2) continue;
+    out.push(r);
+  }
+  return out;
+}
+
+function ripplePushAt(
+  px: number,
+  py: number,
+  ripples: Ripple[],
+  reach: number,
+): { pushX: number; pushY: number } {
+  let pushX = 0;
+  let pushY = 0;
+  for (const rip of ripples) {
+    const dx     = px - rip.x;
+    const dy     = py - rip.y;
+    const d2     = dx * dx + dy * dy;
+    const outerR = rip.radius + reach;
+    const innerR = Math.abs(rip.radius - reach);
+    if (d2 >= outerR * outerR || d2 <= innerR * innerR) continue;
+    const strength = rip.type === 'rain' ? 0.3 : rip.type === 'swipe' ? 1.5 : 2.0;
+    const pushStr  = rip.life * strength;
+    const d = Math.sqrt(d2);
+    pushX += (dx / d) * pushStr;
+    pushY += (dy / d) * pushStr;
+  }
+  return { pushX, pushY };
+}
+
+function renderWaterLayer(
+  c: CanvasRenderingContext2D,
+  bounds: Bounds,
+  causticStep: number,
+  time: number,
+  sparkles: WaterSparkle[],
+  lightPatches: LightPatch[],
+  underwaterText?: string,
+) {
+  const waterPalettes = getWaterPalettes(time);
+  c.fillStyle = rgb(waterPalettes.deep);
+  c.fillRect(0, 0, bounds.w, bounds.h);
+  for (let y = 0; y < bounds.h; y += causticStep) {
+    for (let x = 0; x < bounds.w; x += causticStep) {
+      const col = getWaterColor(x, y, time, waterPalettes);
+      if (col[0] !== waterPalettes.deep[0]
+          || col[1] !== waterPalettes.deep[1]
+          || col[2] !== waterPalettes.deep[2]) {
+        c.fillStyle = rgb(col, CAUSTIC_ALPHA);
+        c.fillRect(x, y, causticStep, causticStep);
+      }
+    }
+  }
+  drawSparkles(c, sparkles, time);
+  drawLightPatches(c, lightPatches, time);
+  if (underwaterText) drawUnderwaterText(c, underwaterText, bounds, time);
 }
 
 const WAKE_COLOR: Vec3 = [100, 160, 180];
@@ -160,6 +222,50 @@ function createLightPatches(b: Bounds): LightPatch[] {
     });
   }
   return patches;
+}
+
+function drawUnderwaterText(
+  c: CanvasRenderingContext2D,
+  text: string,
+  b: Bounds,
+  time: number,
+) {
+  c.save();
+  const textDriftX = Math.sin(time * 0.15) * sc(b, 3);
+  const textDriftY = Math.cos(time * 0.12) * sc(b, 2);
+  const textX      = b.w / 2 + textDriftX;
+  const textY      = b.h / 2 + textDriftY;
+  const fontSize   = Math.max(12, Math.round(b.w * 0.22));
+  c.font           = `italic bold ${fontSize}px sans-serif`;
+  c.textAlign      = 'center';
+  c.textBaseline   = 'middle';
+  c.fillStyle      = 'rgba(30, 60, 70, 0.35)';
+  c.fillText(text, textX, textY);
+  c.restore();
+}
+
+function nearestEdgeRoot(cx: number, cy: number, b: Bounds): Pos {
+  const m = sc(b, 4);
+  const candidates: Pos[] = [
+    { x: m, y: cy },
+    { x: b.w - m, y: cy },
+    { x: cx, y: m },
+    { x: cx, y: b.h - m },
+    { x: m, y: m },
+    { x: b.w - m, y: m },
+    { x: m, y: b.h - m },
+    { x: b.w - m, y: b.h - m },
+  ];
+  let best  = candidates[0];
+  let bestD = Infinity;
+  for (const p of candidates) {
+    const d = dist(cx, cy, p.x, p.y);
+    if (d < bestD) {
+      bestD = d;
+      best  = p;
+    }
+  }
+  return best;
 }
 
 function drawLightPatches(c: CanvasRenderingContext2D, patches: LightPatch[], t: number) {
@@ -249,7 +355,7 @@ class Ripple {
     if (type === 'rain') {
       this.maxRadius = rand(20, 35) * scale;
       this.speed     = rand(14, 20) * scale;
-      this.rings     = 2;
+      this.rings     = 1;
       this.alpha     = 0.4;
       this.lineWidth = rand(0.6, 0.8) * scale;
       this.ringGap   = 3 * scale;
@@ -335,6 +441,94 @@ class FoodPellet {
   get alive() { return !this.eaten && this.life > 0; }
 }
 
+/* ── Fish explosion debris ─────────────────────────────────────────── */
+interface ExplosionParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: Vec3;
+  alpha: number;
+  rotation: number;
+  rotSpeed: number;
+  gravity: number;
+}
+
+class Explosion {
+  x: number;
+  y: number;
+  life: number;
+  duration: number;
+  particles: ExplosionParticle[];
+
+  constructor(x: number, y: number, size: number, bodyColor: Vec3, accentColor: Vec3, scale: number) {
+    this.x        = x;
+    this.y        = y;
+    this.life     = 1;
+    this.duration = rand(1.5, 2.5);
+    this.particles = [];
+
+    const count = Math.floor(rand(15, 25));
+    const speedScale = size / (6 * scale);
+    for (let i = 0; i < count; i++) {
+      const angle = rand(0, Math.PI * 2);
+      const speed = rand(8, 30) * speedScale * scale;
+      const color = Math.random() > 0.5 ? bodyColor : accentColor;
+      this.particles.push({
+        x:        this.x,
+        y:        this.y,
+        vx:       Math.cos(angle) * speed,
+        vy:       Math.sin(angle) * speed,
+        size:     rand(1, 3) * scale,
+        color,
+        alpha:    1,
+        rotation: rand(0, Math.PI * 2),
+        rotSpeed: rand(-3, 3),
+        gravity:  rand(2, 5) * scale,
+      });
+    }
+  }
+
+  update(dt: number) {
+    this.life -= dt / this.duration;
+    for (const p of this.particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += p.gravity * dt;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      p.alpha = Math.max(0, this.life);
+      p.rotation += p.rotSpeed * dt;
+    }
+  }
+
+  draw(c: CanvasRenderingContext2D) {
+    for (const p of this.particles) {
+      if (p.alpha <= 0) continue;
+      c.save();
+      c.translate(p.x, p.y);
+      c.rotate(p.rotation);
+      c.globalAlpha = p.alpha * 0.8;
+      if (p.size > 2) {
+        c.beginPath();
+        c.ellipse(0, 0, p.size, p.size * 0.5, 0, 0, Math.PI * 2);
+        c.fillStyle = rgb(p.color);
+        c.fill();
+      } else {
+        c.beginPath();
+        c.arc(0, 0, p.size, 0, Math.PI * 2);
+        c.fillStyle = rgb(p.color);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+      c.restore();
+    }
+  }
+
+  get alive() { return this.life > 0; }
+}
+
 /* ── Lily Pad ──────────────────────────────────────────────────────── */
 class LilyPad {
   x: number;
@@ -401,18 +595,7 @@ class LilyPad {
     const bob      = Math.sin(t * this.bobSpeed + this.bobPhase) * 0.4;
     const driftX   = Math.sin(t * this.driftSpeedX + this.driftPhaseX) * this.driftAmpX;
     const driftY   = Math.sin(t * this.driftSpeedY + this.driftPhaseY) * this.driftAmpY;
-    let pushX = 0;
-    let pushY = 0;
-    for (const rip of ripples) {
-      const d = dist(this.x, this.y, rip.x, rip.y);
-      if (d < rip.radius + this.rippleReach && d > Math.abs(rip.radius - this.rippleReach)) {
-        const strength = rip.type === 'rain' ? 0.4 : rip.type === 'swipe' ? 1.8 : 2.5;
-        const pushStr  = rip.life * strength;
-        const angle    = Math.atan2(this.y - rip.y, this.x - rip.x);
-        pushX += Math.cos(angle) * pushStr;
-        pushY += Math.sin(angle) * pushStr;
-      }
-    }
+    const { pushX, pushY } = ripplePushAt(this.x, this.y, ripples, this.rippleReach);
     return {
       x: this.x + driftX + pushX,
       y: this.y + bob + driftY + pushY,
@@ -548,18 +731,7 @@ class LilyFlower {
     const driftX = Math.sin(t * this.driftSpeedX + this.driftPhaseX) * this.driftAmpX;
     const driftY = Math.sin(t * this.driftSpeedY + this.driftPhaseY) * this.driftAmpY;
 
-    let pushX = 0;
-    let pushY = 0;
-    for (const rip of ripples) {
-      const d = dist(this.x, this.y, rip.x, rip.y);
-      if (d < rip.radius + this.rippleReach && d > Math.abs(rip.radius - this.rippleReach)) {
-        const strength = rip.type === 'rain' ? 0.3 : rip.type === 'swipe' ? 1.5 : 2.0;
-        const pushStr  = rip.life * strength;
-        const angle    = Math.atan2(this.y - rip.y, this.x - rip.x);
-        pushX += Math.cos(angle) * pushStr;
-        pushY += Math.sin(angle) * pushStr;
-      }
-    }
+    const { pushX, pushY } = ripplePushAt(this.x, this.y, ripples, this.rippleReach);
 
     const xx                = this.x + driftX + pushX;
     const yy                = this.y + bob + driftY + pushY;
@@ -599,6 +771,13 @@ class Reed {
   hasFlower: boolean;
   flowerColor: Vec3;
   stemWidth: number;
+  private geom: {
+    sway: number;
+    tipX: number;
+    tipY: number;
+    stemPts: { x: number; y: number }[];
+    leaves: { lx: number; ly: number; side: number }[];
+  } | null = null;
 
   constructor(b: Bounds, x?: number, y?: number, height?: number) {
     this.x         = x ?? rand(0, b.w);
@@ -617,47 +796,74 @@ class Reed {
     this.stemWidth  = rand(1.0, 1.2) * b.scale;
   }
 
-  draw(c: CanvasRenderingContext2D, t: number) {
-    const sway = Math.sin(t * this.swaySpeed + this.swayPhase) * (1.5 * (this.height / 40));
+  prepareGeom(t: number) {
+    const sway    = Math.sin(t * this.swaySpeed + this.swayPhase) * (1.5 * (this.height / 40));
+    let tipX      = 0;
+    let tipY      = 0;
+    const stemPts: { x: number; y: number }[] = [];
+    const leaves: { lx: number; ly: number; side: number }[] = [];
+    for (let i = 1; i <= this.segments; i++) {
+      const t2 = i / this.segments;
+      const sx = sway * t2 * t2;
+      const sy = -this.height * t2;
+      stemPts.push({ x: sx, y: sy });
+      if (i === this.segments) {
+        tipX = sx;
+        tipY = sy;
+      } else {
+        leaves.push({ lx: sx, ly: sy, side: i % 2 === 0 ? 1 : -1 });
+      }
+    }
+    this.geom = { sway, tipX, tipY, stemPts, leaves };
+  }
+
+  drawStem(c: CanvasRenderingContext2D) {
+    if (!this.geom) return;
     c.save();
     c.translate(this.x, this.y);
     c.strokeStyle = rgb(this.color);
     c.lineWidth   = this.stemWidth;
     c.beginPath();
     c.moveTo(0, 0);
-    let tipX = 0;
-    let tipY = 0;
-    for (let i = 1; i <= this.segments; i++) {
-      const t2 = i / this.segments;
-      const sx = sway * t2 * t2;
-      const sy = -this.height * t2;
-      c.lineTo(sx, sy);
-      tipX = sx;
-      tipY = sy;
-    }
+    for (const pt of this.geom.stemPts) c.lineTo(pt.x, pt.y);
     c.stroke();
-    for (let i = 1; i < this.segments; i++) {
-      const t2   = i / this.segments;
-      const lx   = sway * t2 * t2;
-      const ly   = -this.height * t2;
-      const side = i % 2 === 0 ? 1 : -1;
+    c.restore();
+  }
+
+  drawLeaves(c: CanvasRenderingContext2D) {
+    if (!this.geom) return;
+    const leafW = this.height * 0.05;
+    c.save();
+    c.translate(this.x, this.y);
+    for (const leaf of this.geom.leaves) {
       c.save();
-      c.translate(lx, ly);
-      c.rotate(side * 0.4 + sway * 0.05);
+      c.translate(leaf.lx, leaf.ly);
+      c.rotate(leaf.side * 0.4 + this.geom!.sway * 0.05);
       c.beginPath();
-      const leafW = this.height * 0.05;
-      c.ellipse(side * leafW, 0, leafW * 1.25, leafW * 0.32, side * 0.3, 0, Math.PI * 2);
+      c.ellipse(leaf.side * leafW, 0, leafW * 1.25, leafW * 0.32, leaf.side * 0.3, 0, Math.PI * 2);
       c.fillStyle = rgb(this.color, 0.7);
       c.fill();
       c.restore();
     }
-    if (this.hasFlower) {
-      c.beginPath();
-      c.arc(tipX, tipY - 1, this.height * 0.028, 0, Math.PI * 2);
-      c.fillStyle = rgb(this.flowerColor);
-      c.fill();
-    }
     c.restore();
+  }
+
+  drawFlower(c: CanvasRenderingContext2D) {
+    if (!this.geom || !this.hasFlower) return;
+    c.save();
+    c.translate(this.x, this.y);
+    c.beginPath();
+    c.arc(this.geom.tipX, this.geom.tipY - 1, this.height * 0.028, 0, Math.PI * 2);
+    c.fillStyle = rgb(this.flowerColor);
+    c.fill();
+    c.restore();
+  }
+
+  draw(c: CanvasRenderingContext2D, t: number) {
+    this.prepareGeom(t);
+    this.drawStem(c);
+    this.drawLeaves(c);
+    this.drawFlower(c);
   }
 }
 
@@ -686,7 +892,14 @@ class Fish {
   solidColor: boolean;
   patches: KoiPatch[];
   satisfiedTimer = 0;
+  fatness          = 1;
+  mealsEaten       = 0;
+  maxMeals: number;
+  fatTarget        = 1;
+  explode          = false;
   private foodTarget: FoodPellet | null = null;
+  private cachedBodyPath: Path2D | null = null;
+  private cachedBodySize = 0;
 
   constructor(b: Bounds, tier: 'hero' | 'medium' | 'small') {
     /* Spawn in open central channel */
@@ -760,6 +973,15 @@ class Fish {
     this.finPhase    = rand(0, Math.PI * 2);
     /* Small tier tends deeper/dimmer */
     this.depth       = tier === 'small' ? rand(0, 0.45) : tier === 'hero' ? rand(0.65, 1) : rand(0.35, 0.85);
+    this.maxMeals    = randInt(8, 12);
+  }
+
+  private getBodyPath(s: number): Path2D {
+    if (!this.cachedBodyPath || Math.abs(s - this.cachedBodySize) > this.cachedBodySize * 0.05) {
+      this.cachedBodyPath  = buildKoiBodyPath(s);
+      this.cachedBodySize  = s;
+    }
+    return this.cachedBodyPath;
   }
 
   flee(rippleX: number, rippleY: number, strength: number) {
@@ -799,10 +1021,17 @@ class Fish {
       speedMult = 1.4;
       if (nearestFood < sc(b, 5)) {
         this.foodTarget.eaten = true;
+        this.mealsEaten++;
+        this.fatTarget = 1 + (this.mealsEaten / this.maxMeals) * 2;
         this.satisfiedTimer = 1;
         this.foodTarget = null;
         speedMult = 0.5;
       }
+    }
+
+    this.fatness += (this.fatTarget - this.fatness) * 0.05;
+    if (this.mealsEaten >= this.maxMeals && this.fatness >= this.fatTarget * 0.95) {
+      this.explode = true;
     }
 
     this.wanderT += dt * 0.4;
@@ -813,6 +1042,8 @@ class Fish {
     const speedNoise = smoothNoise(this.speedT + 500);
     this.baseSpeed   = lerp(this.minCruise, this.maxCruise, speedNoise);
     this.baseSpeed  *= (0.7 + this.depth * 0.3) * speedMult;
+    const fatSpeedPenalty    = 1 / (1 + (this.fatness - 1) * 0.3);
+    const effectiveBaseSpeed = this.baseSpeed * fatSpeedPenalty;
 
     const margin = sc(b, 36);
     let avoidX = 0;
@@ -839,8 +1070,8 @@ class Fish {
     const fleeSpeed = Math.sqrt(this.fleeVx ** 2 + this.fleeVy ** 2);
     this.speed      = Math.min(this.baseSpeed + fleeSpeed, this.maxSpeed);
 
-    const vx = Math.cos(this.heading) * this.baseSpeed + this.fleeVx;
-    const vy = Math.sin(this.heading) * this.baseSpeed + this.fleeVy;
+    const vx = Math.cos(this.heading) * effectiveBaseSpeed + this.fleeVx;
+    const vy = Math.sin(this.heading) * effectiveBaseSpeed + this.fleeVy;
     this.x += vx;
     this.y += vy;
     const edge = sc(b, 6);
@@ -975,18 +1206,23 @@ class Fish {
     const gillC    = darkenVec3(bodyC, 0.3);
     const s        = this.size * depthScale;
     const dorsalBob  = Math.sin(t * tailFreq * 0.5 + this.finPhase) * s * 0.012 * (0.4 + speedFactor);
+    const bodyPath   = this.getBodyPath(s);
 
     c.save();
     c.translate(this.x, this.y);
     c.rotate(this.heading);
+    c.scale(1, this.fatness);
+    if (this.mealsEaten >= this.maxMeals - 1) {
+      const pulse = 1 + Math.sin(t * 12) * 0.05;
+      c.scale(pulse, pulse);
+    }
 
     /* Shadow */
     c.save();
     c.translate(shadowOffset, shadowOffset);
     c.globalAlpha = 0.14 + this.depth * 0.04;
-    traceKoiBody(c, s);
     c.fillStyle = '#000';
-    c.fill();
+    c.fill(bodyPath);
     c.restore();
 
     /* Tail lobes (behind body) */
@@ -998,15 +1234,13 @@ class Fish {
     this.drawPectoralFin(c, s, bodyC, 1, finSwing + 0.08);
 
     /* Opaque body */
-    traceKoiBody(c, s);
     c.fillStyle = rgb(bodyC);
-    c.fill();
+    c.fill(bodyPath);
 
     /* Pattern patches clipped to body */
     if (!this.solidColor && this.patches.length > 0) {
       c.save();
-      traceKoiBody(c, s);
-      c.clip();
+      c.clip(bodyPath);
       for (const patch of this.patches) {
         c.beginPath();
         c.ellipse(patch.x, patch.y, patch.rx, patch.ry, patch.rot, 0, Math.PI * 2);
@@ -1080,47 +1314,7 @@ function densePadCluster(
     clusterPads.push(pad);
   }
 
-  return { clusterPads, edgeRoot: edgeRoot ?? { x: fx < 0.5 ? sc(b, 4) : b.w - sc(b, 4), y: cy } };
-}
-
-/* Individual pads scattered through the centre 60% — breaks up empty water */
-function scatterMidZonePads(
-  b: Bounds,
-  pads: LilyPad[],
-  flowers: LilyFlower[],
-  count: number,
-) {
-  const midPads: LilyPad[] = [];
-  for (let i = 0; i < count; i++) {
-    const pad = new LilyPad(b, {
-      x: rand(b.w * 0.2, b.w * 0.8),
-      y: rand(b.h * 0.2, b.h * 0.8),
-      r: rand(4, 10),
-    });
-    pads.push(pad);
-    midPads.push(pad);
-  }
-  const flowerCount = randInt(3, 5);
-  for (let i = 0; i < flowerCount && midPads.length > 0; i++) {
-    flowers.push(new LilyFlower(midPads[Math.floor(Math.random() * midPads.length)], b));
-  }
-}
-
-function scatterMidReedTufts(b: Bounds, reeds: Reed[]) {
-  const tuftCount = randInt(4, 6);
-  for (let t = 0; t < tuftCount; t++) {
-    const cx = rand(b.w * 0.25, b.w * 0.75);
-    const cy = rand(b.h * 0.25, b.h * 0.75);
-    const n  = randInt(2, 3);
-    for (let i = 0; i < n; i++) {
-      reeds.push(new Reed(
-        b,
-        cx + rand(-sc(b, 16), sc(b, 16)),
-        cy + rand(-sc(b, 16), sc(b, 16)),
-        rand(8, 16),
-      ));
-    }
-  }
+  return { clusterPads, edgeRoot: edgeRoot ?? nearestEdgeRoot(cx, cy, b) };
 }
 
 function createStems(clusters: { pads: LilyPad[]; root: Pos }[], b: Bounds): PadStem[] {
@@ -1149,19 +1343,42 @@ function createScene(b: Bounds) {
     clusterMeta.push({ pads: lilyPads.slice(before), root: root ?? edgeRoot });
   };
 
-  addCluster(0.10, 0.12, randInt(10, 15), sc(b, 22), { x: sc(b, 4), y: b.h * 0.12 });
-  addCluster(0.12, 0.88, randInt(8, 12),  sc(b, 20), { x: sc(b, 4), y: b.h * 0.88 });
-  addCluster(0.90, 0.10, randInt(8, 12),  sc(b, 20), { x: b.w - sc(b, 4), y: b.h * 0.10 });
-  addCluster(0.92, 0.86, randInt(10, 15), sc(b, 22), { x: b.w - sc(b, 4), y: b.h * 0.86 });
-  addCluster(0.50, 0.94, randInt(6, 8),   sc(b, 18), { x: b.w * 0.5, y: b.h - sc(b, 4) });
+  /* Corner clusters — densest */
+  addCluster(0.10, 0.12, 12, sc(b, 40), { x: sc(b, 4), y: sc(b, 4) });
+  addCluster(0.88, 0.12, 10, sc(b, 35), { x: b.w - sc(b, 4), y: sc(b, 4) });
+  addCluster(0.10, 0.85, 10, sc(b, 35), { x: sc(b, 4), y: b.h - sc(b, 4) });
+  addCluster(0.88, 0.85, 12, sc(b, 40), { x: b.w - sc(b, 4), y: b.h - sc(b, 4) });
 
-  scatterMidZonePads(b, lilyPads, lilyFlowers, randInt(20, 30));
+  /* Edge clusters — medium density */
+  addCluster(0.40, 0.08, 6, sc(b, 25), { x: b.w * 0.5, y: sc(b, 4) });
+  addCluster(0.60, 0.90, 6, sc(b, 25), { x: b.w * 0.5, y: b.h - sc(b, 4) });
+  addCluster(0.05, 0.50, 5, sc(b, 20), { x: sc(b, 4), y: b.h * 0.5 });
+  addCluster(0.95, 0.50, 5, sc(b, 20), { x: b.w - sc(b, 4), y: b.h * 0.5 });
+
+  /* Mid-canvas — small clumps across full pond */
+  const midClusterCount = randInt(8, 12);
+  for (let i = 0; i < midClusterCount; i++) {
+    addCluster(
+      rand(0.15, 0.85),
+      rand(0.15, 0.85),
+      randInt(2, 5),
+      sc(b, rand(15, 30)),
+    );
+  }
+
+  /* Solo pads — organic fill */
+  for (let i = 0; i < 8; i++) {
+    addCluster(rand(0.05, 0.95), rand(0.05, 0.95), 1, 0);
+  }
 
   const padStems = createStems(clusterMeta, b);
 
-  for (let i = 0; i < NUM_FLOWERS; i++) {
-    const pad = lilyPads[Math.floor(Math.random() * lilyPads.length)];
-    lilyFlowers.push(new LilyFlower(pad, b));
+  if (lilyPads.length > 0) {
+    const flowerCount = Math.max(1, Math.floor(lilyPads.length / randInt(5, 7)));
+    for (let i = 0; i < flowerCount; i++) {
+      const pad = lilyPads[Math.floor(Math.random() * lilyPads.length)];
+      lilyFlowers.push(new LilyFlower(pad, b));
+    }
   }
 
   function reedCluster(fx: number, fy: number, count: number, spread: number) {
@@ -1184,8 +1401,6 @@ function createScene(b: Bounds) {
   reedCluster(0.22, 0.04, randInt(8, 12),  sc(b, 14));
   reedCluster(0.78, 0.05, randInt(8, 12),  sc(b, 14));
 
-  scatterMidReedTufts(b, reeds);
-
   const fishTiers: Array<'hero' | 'medium' | 'small'> = [
     'hero', 'hero', 'medium', 'medium', 'medium', 'small', 'small',
   ];
@@ -1197,6 +1412,36 @@ function createScene(b: Bounds) {
 
 function randInt(min: number, max: number) {
   return Math.floor(rand(min, max + 1));
+}
+
+function spawnRespawnFish(b: Bounds): Fish {
+  const tiers: Array<'hero' | 'medium' | 'small'> = [
+    'hero', 'hero', 'medium', 'medium', 'medium', 'small', 'small',
+  ];
+  const tier = tiers[Math.floor(Math.random() * tiers.length)];
+  const f    = new Fish(b, tier);
+  const off  = sc(b, 12);
+  const edge = Math.floor(rand(0, 4));
+
+  if (edge === 0) {
+    f.x = -off;
+    f.y = rand(off, b.h - off);
+    f.heading = 0;
+  } else if (edge === 1) {
+    f.x = b.w + off;
+    f.y = rand(off, b.h - off);
+    f.heading = Math.PI;
+  } else if (edge === 2) {
+    f.x = rand(off, b.w - off);
+    f.y = -off;
+    f.heading = Math.PI / 2;
+  } else {
+    f.x = rand(off, b.w - off);
+    f.y = b.h + off;
+    f.heading = -Math.PI / 2;
+  }
+  f.wanderAngle = f.heading;
+  return f;
 }
 
 function applyPixelFilter(
@@ -1269,6 +1514,8 @@ interface KoiPondProps {
   baseHeight?: number;
   /** Fixed resolution; only used when fillContainer is false. */
   resolution?: { width: number; height: number };
+  /** Drawn on the pond floor (under fish/pads), e.g. "404" on the not-found page. */
+  underwaterText?: string;
 }
 
 export default function KoiPond({
@@ -1278,6 +1525,7 @@ export default function KoiPond({
   fillContainer = true,
   baseHeight = BASE_CANVAS_H,
   resolution,
+  underwaterText,
 }: KoiPondProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef    = useRef<HTMLCanvasElement | null>(null);
@@ -1314,7 +1562,7 @@ export default function KoiPond({
     if (!ctx) return;
 
     const bounds = makeBounds(canvasSize.width, canvasSize.height);
-    const causticStep = Math.max(4, Math.round(CAUSTIC_STEP * bounds.scale));
+    const causticStep = Math.max(12, Math.round(CAUSTIC_STEP * bounds.scale));
     canvas.width  = bounds.w;
     canvas.height = bounds.h;
 
@@ -1322,6 +1570,17 @@ export default function KoiPond({
     const { lilyPads, lilyFlowers, reeds, fish, sparkles, padStems, lightPatches } = createScene(bounds);
     const ripples: Ripple[] = [];
     const foodPellets: FoodPellet[] = [];
+    const explosions: Explosion[] = [];
+    const pendingRespawns: { timer: number }[] = [];
+
+    const waterCanvas = document.createElement('canvas');
+    waterCanvas.width  = bounds.w;
+    waterCanvas.height = bounds.h;
+    const waterCtx = waterCanvas.getContext('2d');
+    let waterFrameCounter = WATER_UPDATE_INTERVAL;
+    if (waterCtx) {
+      renderWaterLayer(waterCtx, bounds, causticStep, 0, sparkles, lightPatches, underwaterText);
+    }
 
     let offCtx: CanvasRenderingContext2D | null = null;
     if (pixelFilter) {
@@ -1426,7 +1685,17 @@ export default function KoiPond({
     let lastTime = performance.now();
     let time     = 0;
 
+    const onVisibility = () => {
+      if (!document.hidden) lastTime = performance.now();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     function frame(now: number) {
+      if (document.hidden) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
       time    += dt;
@@ -1435,8 +1704,14 @@ export default function KoiPond({
 
       nextRainDrop -= dt;
       if (nextRainDrop <= 0) {
-        const rainM = sc(bounds, 10);
-        ripples.push(new Ripple(rand(rainM, bounds.w - rainM), rand(rainM, bounds.h - rainM), 'rain', bounds.scale));
+        let rainCount = 0;
+        for (const r of ripples) {
+          if (r.type === 'rain') rainCount++;
+        }
+        if (rainCount < MAX_RAIN_RIPPLES) {
+          const rainM = sc(bounds, 10);
+          ripples.push(new Ripple(rand(rainM, bounds.w - rainM), rand(rainM, bounds.h - rainM), 'rain', bounds.scale));
+        }
         nextRainDrop = rand(0.05, 0.2);
       }
       if (mouseSwipeCooldown > 0) mouseSwipeCooldown -= dt;
@@ -1450,55 +1725,98 @@ export default function KoiPond({
         if (!foodPellets[i].alive) foodPellets.splice(i, 1);
       }
 
-      /* 1 — water + caustics */
-      const waterPalettes = getWaterPalettes(time);
-      ctx!.fillStyle = rgb(waterPalettes.deep);
-      ctx!.fillRect(0, 0, bounds.w, bounds.h);
-      for (let y = 0; y < bounds.h; y += causticStep) {
-        for (let x = 0; x < bounds.w; x += causticStep) {
-          const c = getWaterColor(x, y, time, waterPalettes);
-          if (c[0] !== waterPalettes.deep[0]
-              || c[1] !== waterPalettes.deep[1]
-              || c[2] !== waterPalettes.deep[2]) {
-            ctx!.fillStyle = rgb(c, CAUSTIC_ALPHA);
-            ctx!.fillRect(x, y, causticStep, causticStep);
-          }
-        }
+      /* 1–4 — cached water layer (caustics, sparkles, light patches, floor text) */
+      waterFrameCounter++;
+      if (waterFrameCounter >= WATER_UPDATE_INTERVAL && waterCtx) {
+        waterFrameCounter = 0;
+        renderWaterLayer(
+          waterCtx,
+          bounds,
+          causticStep,
+          time,
+          sparkles,
+          lightPatches,
+          underwaterText,
+        );
       }
+      if (waterCtx) ctx!.drawImage(waterCanvas, 0, 0);
 
-      /* 2 — sparkles */
-      drawSparkles(ctx!, sparkles, time);
+      const activeRipples = filterDisplacementRipples(ripples);
 
-      /* 3 — drifting light */
-      drawLightPatches(ctx!, lightPatches, time);
+      /* 5 — stems */
+      for (const stem of padStems) stem.draw(ctx!, time, activeRipples);
 
-      /* 4 — stems */
-      for (const stem of padStems) stem.draw(ctx!, time, ripples);
-
-      /* 5 — rain ripples (under vegetation) */
+      /* 6 — rain ripples (under vegetation) */
       for (const rip of ripples) {
         if (rip.type === 'rain') rip.draw(ctx!);
       }
 
-      /* 6 — fish */
+      /* 7 — fish */
       for (const f of fish) {
         f.update(dt, smoothNoise, bounds, foodPellets);
+      }
+
+      for (let i = fish.length - 1; i >= 0; i--) {
+        const f = fish[i];
+        if (!f.explode) continue;
+        explosions.push(new Explosion(
+          f.x,
+          f.y,
+          f.size * f.fatness,
+          f.bodyColor,
+          f.accentColor,
+          bounds.scale,
+        ));
+        ripples.push(new Ripple(f.x, f.y, 'user', bounds.scale));
+        for (const other of fish) {
+          if (other === f) continue;
+          if (dist(other.x, other.y, f.x, f.y) < sc(bounds, 80)) {
+            other.flee(f.x, f.y, 20);
+          }
+        }
+        pendingRespawns.push({ timer: rand(8, 15) });
+        fish.splice(i, 1);
+      }
+
+      for (let i = pendingRespawns.length - 1; i >= 0; i--) {
+        pendingRespawns[i].timer -= dt;
+        if (pendingRespawns[i].timer <= 0) {
+          fish.push(spawnRespawnFish(bounds));
+          fish.sort((a, b) => a.depth - b.depth);
+          pendingRespawns.splice(i, 1);
+        }
+      }
+
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        explosions[i].update(dt);
+        if (!explosions[i].alive) explosions.splice(i, 1);
+      }
+
+      for (const f of fish) {
         ctx!.globalAlpha = 0.35 + f.depth * 0.55;
         f.draw(ctx!, time);
         ctx!.globalAlpha = 1;
       }
 
-      /* 7 — food pellets */
+      /* 8 — food pellets */
       for (const pellet of foodPellets) pellet.draw(ctx!, time);
 
-      /* 8 — pads + flowers */
-      for (const pad of lilyPads) pad.draw(ctx!, time, ripples);
-      for (const flower of lilyFlowers) flower.draw(ctx!, time, ripples);
+      /* 9 — pads + flowers */
+      for (const pad of lilyPads) pad.draw(ctx!, time, activeRipples);
+      for (const flower of lilyFlowers) flower.draw(ctx!, time, activeRipples);
 
-      /* 9 — reeds */
-      for (const r of reeds) r.draw(ctx!, time);
+      /* 10 — reeds (batched by draw op) */
+      for (const r of reeds) r.prepareGeom(time);
+      for (const r of reeds) r.drawStem(ctx!);
+      for (const r of reeds) r.drawLeaves(ctx!);
+      for (const r of reeds) {
+        if (r.hasFlower) r.drawFlower(ctx!);
+      }
 
-      /* 10 — user / swipe ripples (on top) */
+      /* 11 — explosions */
+      for (const ex of explosions) ex.draw(ctx!);
+
+      /* 12 — user / swipe ripples (on top) */
       for (const rip of ripples) {
         if (rip.type !== 'rain') rip.draw(ctx!);
       }
@@ -1512,12 +1830,13 @@ export default function KoiPond({
 
     return () => {
       cancelAnimationFrame(raf);
+      document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [canvasSize, pixelFilter]);
+  }, [canvasSize, pixelFilter, underwaterText]);
 
   return (
     <div

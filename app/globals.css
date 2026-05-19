@@ -407,6 +407,46 @@ body {
 
 .aip-nav-bar a.current { color: #111; font-weight: 700; }
 
+/* Dark full-bleed pages (404 koi pond) */
+.aip-nav-bar--transparent {
+  background:              rgba(0, 0, 0, 0.15);
+  backdrop-filter:         blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-color:            rgba(255, 255, 255, 0.12);
+  box-shadow:              0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.aip-nav-bar--transparent a,
+.aip-nav-bar--transparent .aip-nav-dd__trigger {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.aip-nav-bar--transparent a:hover,
+.aip-nav-bar--transparent .aip-nav-dd__trigger:hover {
+  color: #fff;
+}
+
+.aip-nav-bar--transparent a.current,
+.aip-nav-bar--transparent .aip-nav-dd__trigger.current {
+  color: #fff;
+  font-weight: 700;
+}
+
+.aip-nav-bar--transparent .nav-divider {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.aip-nav-mobile--transparent .aip-nav-mobile-toggle {
+  background:              rgba(0, 0, 0, 0.25);
+  backdrop-filter:         blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-color:            rgba(255, 255, 255, 0.2);
+}
+
+.aip-nav-mobile--transparent .aip-nav-mobile-toggle-bars span {
+  background: #fff;
+}
+
 .aip-nav-bar .nav-divider {
   width:      1px;
   height:     14px;

@@ -7,6 +7,8 @@ type NavCurrent = 'home' | 'about' | 'ai-project' | 'supermarket' | undefined;
 
 interface AiNavProps {
   current?: NavCurrent;
+  /** Frosted dark pill for pages with dark full-bleed backgrounds (e.g. 404 pond). */
+  transparent?: boolean;
 }
 
 type OpenFolder = 'projects' | 'contact' | null;
@@ -23,7 +25,7 @@ const LEAVE_MS = 160;
   Desktop Projects contains Accessible Supermarkets + AI x Design.
   Desktop Contact contains Email + LinkedIn.
 */
-export default function AiNav({ current }: AiNavProps) {
+export default function AiNav({ current, transparent = false }: AiNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openFolder, setOpenFolder] = useState<OpenFolder>(null);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,7 +117,7 @@ export default function AiNav({ current }: AiNavProps) {
       {/* Desktop — centred pill + folder dropdowns */}
       <nav
         ref={navRef}
-        className="aip-nav-bar aip-nav-bar--desktop"
+        className={`aip-nav-bar aip-nav-bar--desktop${transparent ? ' aip-nav-bar--transparent' : ''}`}
         aria-label="Site"
       >
         <Link href="/" className={current === 'home' ? 'current' : undefined}>
@@ -213,7 +215,7 @@ export default function AiNav({ current }: AiNavProps) {
       </nav>
 
       {/* Mobile — hamburger + folder-tab dock */}
-      <div className={`aip-nav-mobile${mobileOpen ? ' aip-nav-mobile--open' : ''}`}>
+      <div className={`aip-nav-mobile${mobileOpen ? ' aip-nav-mobile--open' : ''}${transparent ? ' aip-nav-mobile--transparent' : ''}`}>
         <button
           type="button"
           className="aip-nav-mobile-toggle"
