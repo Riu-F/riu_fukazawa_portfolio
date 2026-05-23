@@ -33,7 +33,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       ui_host: "https://us.posthog.com",
       capture_pageview: false,
       capture_pageleave: true,
-      scroll_depth: true,
+      /* Scroll depth is on by default; use disable_scroll_properties to turn off. */
     });
   }, []);
 
