@@ -1,17 +1,17 @@
 import './ai-project.css';
 import AiNav            from './components/AiNav';
 import ScrollAnimations from './components/ScrollAnimations';
-import AiIdea           from './components/AiIdea';
-import AiContext        from './components/AiContext';
-import AiProblem        from './components/AiProblem';
-import AiCompetitor     from './components/AiCompetitor';
-import AiGoal           from './components/AiGoal';
-import AiOutcome        from './components/AiOutcome';
-import AiHowItWorks     from './components/AiHowItWorks';
 import AiCheckoutHero        from './components/AiCheckoutHero';
-import AiCheckoutGenerator   from './components/AiCheckoutGenerator';
+import AiIdea           from './components/AiIdea';
 import AiProcess              from './components/AiProcess';
-import AiFooter         from './components/AiFooter';
+import AiProblem        from './components/AiProblem';
+import AiResearchCompetitors from './components/AiResearchCompetitors';
+import AiGoal           from './components/AiGoal';
+import AiHowItWorks     from './components/AiHowItWorks';
+import AiOutcome        from './components/AiOutcome';
+import AiCheckoutGenerator   from './components/AiCheckoutGenerator';
+import AiWhatsNext      from './components/AiWhatsNext';
+import SiteFooter       from '../components/SiteFooter';
 
 export const metadata = {
   title: 'AI × Design — Riu',
@@ -24,16 +24,16 @@ export default function AiProjectPage() {
       <ScrollAnimations />
       <AiNav current="ai-project" />
       <AiCheckoutHero />
-      <AiCheckoutGenerator />
       <AiIdea />
-      <AiContext />
-      <AiProblem />
-      <AiCompetitor />
-      <AiGoal />
-      <AiOutcome />
-      <AiHowItWorks />
       <AiProcess />
-      <AiFooter />
+      <AiProblem />
+      <AiResearchCompetitors />
+      <AiGoal />
+      <AiHowItWorks />
+      <AiOutcome />
+      <AiCheckoutGenerator />
+      <AiWhatsNext />
+      <SiteFooter />
     </div>
   );
 }

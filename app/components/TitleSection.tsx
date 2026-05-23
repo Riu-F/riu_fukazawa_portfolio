@@ -15,7 +15,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { TAGLINES } from '../lib/titleData';
 import CyclingWordmark from './CyclingWordmark';
 
-export default function TitleSection() {
+type TitleSectionProps = {
+  seedFlywheelOnMount?: boolean;
+};
+
+export default function TitleSection({ seedFlywheelOnMount = false }: TitleSectionProps) {
   const taglineRef = useRef<HTMLParagraphElement>(null);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -46,13 +50,16 @@ export default function TitleSection() {
       <>
         {/* Top text block: subtitle first, then "Hello, I'm" */}
         <div className="hero_mobile_text">
-          <p className="tagline" ref={taglineRef}>{TAGLINES[0]}</p>
-          <p className="hello-intro">Hello, I&rsquo;m</p>
+          <p className="tagline hero-intro-fade" ref={taglineRef}>{TAGLINES[0]}</p>
+          <p className="hello-intro hero-intro-fade">Hello, I&rsquo;m</p>
         </div>
 
         {/* Wordmark: "Riu" rotated 90° as a single sideways wordmark */}
         <div className="hero_mobile_wordmark_wrap">
-          <CyclingWordmark onIndexChange={onIndexChange} />
+          <CyclingWordmark
+            onIndexChange={onIndexChange}
+            seedFlywheelOnMount={seedFlywheelOnMount}
+          />
         </div>
       </>
     );
@@ -60,13 +67,16 @@ export default function TitleSection() {
 
   return (
     <div className="hero_bottom">
-      <p className="hello-intro">Hello, I&rsquo;m</p>
+      <p className="hello-intro hero-intro-fade">Hello, I&rsquo;m</p>
 
       {/* Plain text — no custom letter decomposition */}
-      <CyclingWordmark onIndexChange={onIndexChange} />
+      <CyclingWordmark
+        onIndexChange={onIndexChange}
+        seedFlywheelOnMount={seedFlywheelOnMount}
+      />
 
       {/* white-space: pre-line in CSS makes \n a visible line break */}
-      <p className="tagline" ref={taglineRef}>
+      <p className="tagline hero-intro-fade" ref={taglineRef}>
         {TAGLINES[0]}
       </p>
     </div>

@@ -1,42 +1,41 @@
+import { AiInsightTag, type AiInsightPrinciple } from './AiInsightTag';
+
+const GOAL_PRINCIPLES: { principle: AiInsightPrinciple; text: string }[] = [
+  { principle: 'invisible-ai', text: 'over visible AI' },
+  { principle: 'post-purchase', text: 'is prime real estate' },
+  { principle: 'activate-data', text: "don't collect more" },
+];
+
 export default function AiGoal() {
   return (
-    <section className="default-section aip-mobile-unbox">
+    <section className="default-section aip-goal">
       <div className="default-container w-container">
-        <div className="container-limit-width">
-          <div className="bento-box-style-only">
-            <h3 className="h3-new">The goal</h3>
-            <p className="paragraph-new">
-              <span className="highlight">
-                The goal of this project isn&rsquo;t to show a dynamically generated website content
-              </span>
-              , thats not new. This website, will try to show what it thinks is you want to know,
-              and what you should know based on what you probably don&rsquo;t know. For example:
-            </p>
-            <ul role="list" className="list-numbered paragraph-new">
-              <li className="list-item-new">
-                <div>
-                  A user from a warm season-less tropical country, if traveling to a cold wintery
-                  snowy holiday, probably needs a lot more information about cold weather clothing
-                  to prepare that someone from a already cold climate country traveling to the same
-                  destination.
-                </div>
-              </li>
-              <li className="list-item-new">
-                <div>
-                  A user visiting a country for the first time or traveling overseas for the first
-                  time, probably needing lots of background information about simple travel
-                  procedures and customs to feel comforted and reassured, compared to a experienced
-                  or repeat traveler who wants something new and adventurous
-                </div>
-              </li>
-            </ul>
-            <p className="paragraph-new">
-              Such a hyper personalised experience would have been too much work to implement well
-              before AI, and AI has opened the door for infinitely scalable personalisation in so
-              many industries.
-            </p>
-          </div>
+        <div className="aip-idea__eyebrow-wrap">
+          <div className="aip-idea__accent-bar" aria-hidden />
+          <span className="aip-idea__eyebrow">The Goal</span>
         </div>
+
+        <p className="aip-goal__statement width-limit">
+          Use AI as an invisible layer that reads existing booking data and generates a personalised
+          post-checkout page. One that tells each traveller what they specifically need to know,
+          based on who they are and where they&rsquo;re going.
+        </p>
+
+        <p className="paragraph-new width-limit aip-goal__support">
+          A first-time family from Jakarta heading to Tokyo in winter needs visa guidance, cold
+          weather prep, and kid-friendly logistics. A solo photographer revisiting Kyoto in spring
+          needs insider cultural spots and efficient transit tips. Same system, same UI, completely
+          different output. That kind of contextual adaptation at scale is what AI makes possible.
+        </p>
+
+        <ul className="aip-goal__principles" role="list">
+          {GOAL_PRINCIPLES.map(({ principle, text }) => (
+            <li key={principle} className="aip-goal__principle-row">
+              <AiInsightTag principle={principle} />
+              <span className="aip-goal__principle-text">{text}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

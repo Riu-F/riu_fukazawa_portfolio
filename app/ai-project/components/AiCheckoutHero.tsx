@@ -4,6 +4,7 @@ import { useState, useRef }            from 'react';
 import { PERSONAS, getMockCheckout }   from './ai-checkout-mock';
 import type { CheckoutData }           from './ai-checkout-types';
 import CheckoutOutput, { Icon }        from './CheckoutOutput';
+import { getBannerForPersona }         from '../lib/checkout-banners';
 
 /* ── Persona icon ────────────────────────────────────────────────── */
 function PersonaIcon({ iconName, active }: { iconName: string; active: boolean }) {
@@ -117,6 +118,7 @@ export default function AiCheckoutHero() {
             <CheckoutOutput
               checkout={isShimmering ? null : checkout}
               isLoading={isShimmering}
+              bannerSrc={getBannerForPersona(PERSONAS[activeIdx].id)}
             />
           </div>
 

@@ -487,55 +487,307 @@
 .aip .milestone.is-left  { --tx: calc(var(--nudge) * -1); }
 .aip .milestone.is-right { --tx: var(--nudge); }
 
-/* ── STORY SECTION INTRO ──────────────────────────────────────── */
-.aip .story-intro {
-  padding-top:    80px;
-  padding-bottom: 48px;
+/* ── AiProcess — horizontal stepper ───────────────────────────── */
+
+.aip .aip-process {
+  background: #fafafa;
 }
 
-/* Centre story phases under the same max width as the rest of the AI page (desktop) */
-.aip .section-story-timeline .aip-story-phases {
-  max-width:   960px;
-  width:       100%;
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing:  border-box;
-  padding-left:  2rem;
-  padding-right: 2rem;
+.aip .aip-process .h2 {
+  margin-top: 0;
 }
 
-/* Rainbow progress fill — spans the full height of all phases.
-   z-index 1: sits below .timeline_item (z-index 2), which is transparent
-   except for its own content. The ::before on .timeline_centre is made
-   transparent so it no longer covers this track. The circle (inside the
-   z-index-2 item) naturally masks the track, creating a dot-on-line look.
-   The track background (#2a2a2a) provides the gray portion not yet filled. */
-.aip .story-progress-track {
-  position:  absolute;
-  left:      50%;
-  transform: translateX(-50%);
-  top:       0;
-  bottom:    0;
-  width:     2px;
-  z-index:   1;
+.aip .aip-process__intro {
+  margin-bottom: 2.5rem;
+}
+
+.aip .aip-process__stepper {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-process__track {
+  position: relative;
+  --aip-process-line-pct: 0%;
+}
+
+.aip .aip-process__line-bg,
+.aip .aip-process__line-fill {
+  position:       absolute;
+  top:            1.05rem;
+  left:           10%;
+  width:          80%;
+  height:         3px;
+  border-radius:  999px;
   pointer-events: none;
-  overflow:  hidden;
-  background: #2a2a2a; /* gray track — visible below the fill */
 }
 
-.aip .story-progress-fill {
-  position:   absolute;
-  top:        0;
-  left:       0;
-  right:      0;
-  background: linear-gradient(to bottom,
-    #a78bfa 0%,
-    #818cf8 30%,
-    #38bdf8 65%,
-    #34d399 100%
+.aip .aip-process__line-bg {
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to right,
+    #e4e4e4 0,
+    #e4e4e4 6px,
+    transparent 6px,
+    transparent 12px
   );
-  pointer-events: none;
-  transition: height 0.12s linear;
+}
+
+.aip .aip-process__line-fill {
+  z-index:    1;
+  width:      var(--aip-process-line-pct, 0%);
+  background: var(--aip-rainbow);
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aip .aip-process__nodes {
+  position:                  relative;
+  z-index:                   2;
+  display:                   grid;
+  grid-template-columns:     repeat(5, minmax(0, 1fr));
+  gap:                       0.35rem 0.65rem;
+}
+
+.aip .aip-process__node {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  text-align:     center;
+  margin:         0;
+  padding:        0.55rem 0.35rem 0.75rem;
+  border:         1.5px solid transparent;
+  border-radius:  12px;
+  background:     transparent;
+  cursor:         pointer;
+  font:           inherit;
+  color:          inherit;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aip .aip-process__node:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.aip .aip-process__node:focus-visible {
+  outline:        2px solid #7b61ff;
+  outline-offset: 2px;
+}
+
+.aip .aip-process__node--active {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--aip-rainbow) border-box;
+  border:     1.5px solid transparent;
+  box-shadow: 0 6px 24px rgba(123, 97, 255, 0.12);
+  transform:  translateY(-2px);
+}
+
+.aip .aip-process__dot-wrap {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  height:          2.1rem;
+  margin-bottom:   0.35rem;
+}
+
+.aip .aip-process__dot {
+  width:         14px;
+  height:        14px;
+  border-radius: 999px;
+  background:    #e4e4e4;
+  box-shadow:    0 0 0 3px #fafafa;
+  transition:
+    transform 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.aip .aip-process__node--past .aip-process__dot {
+  background: var(--aip-rainbow);
+  box-shadow: 0 0 0 3px #fafafa;
+}
+
+.aip .aip-process__node--active .aip-process__dot {
+  width:      18px;
+  height:     18px;
+  background: var(--aip-rainbow);
+  box-shadow: 0 0 0 4px rgba(123, 97, 255, 0.2);
+}
+
+.aip .aip-process__number {
+  font-family:    'DM Mono', monospace;
+  font-size:      0.72rem;
+  font-weight:    500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:          #999;
+  margin-bottom:  0.2rem;
+}
+
+.aip .aip-process__node--active .aip-process__number,
+.aip .aip-process__node--active .aip-process__node-title {
+  color: #111;
+}
+
+.aip .aip-process__node-title {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size:   0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color:       #333;
+  margin-bottom: 0.35rem;
+}
+
+.aip .aip-process__node-summary {
+  font-family: 'Inter', sans-serif;
+  font-size:   0.8rem;
+  line-height: 1.4;
+  color:       #666;
+  display:     -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow:    hidden;
+}
+
+.aip .aip-process__panel {
+  padding:          1.75rem 1.75rem 2rem;
+  background:       #fff;
+  border:           1px solid #e4e4e4;
+  border-radius:    14px;
+  min-height:       680px;
+}
+
+.aip .aip-process__panel-inner {
+  animation: aip-process-panel-in 0.38s ease;
+}
+
+@keyframes aip-process-panel-in {
+  from {
+    opacity:   0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity:   1;
+    transform: translateY(0);
+  }
+}
+
+.aip .aip-process__list {
+  padding-left:   1.15rem;
+  list-style-type: disc;
+  margin-bottom:  1.25rem;
+}
+
+.aip .aip-process__list li {
+  margin-bottom: 0.65rem;
+}
+
+.aip .aip-process__learn-heading {
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.aip .aip-process__links {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       0.5rem 0.65rem;
+  margin-top: 1.5rem;
+}
+
+.aip .aip-process__link-pill {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             0.35rem;
+  padding:         0.45rem 0.85rem;
+  font-family:     'Inter', sans-serif;
+  font-size:       0.8rem;
+  font-weight:     600;
+  letter-spacing:  0.04em;
+  text-transform:  uppercase;
+  color:           #333;
+  text-decoration: none;
+  background:      #fafafa;
+  border:          1px solid #e4e4e4;
+  border-radius:   999px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.aip .aip-process__link-pill:hover {
+  background:   #fff;
+  border-color: #ccc;
+  color:        #111;
+}
+
+.aip .aip-process__link-icon {
+  width:  14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.aip .aip-process__link-cards {
+  display:               grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:                   0.85rem;
+  margin-top:            1.35rem;
+}
+
+.aip .aip-process__link-card {
+  display:         flex;
+  flex-direction:  column;
+  gap:             0.55rem;
+  padding:         0.65rem;
+  border:          1px solid #e4e4e4;
+  border-radius:   10px;
+  background:      #fff;
+  text-decoration: none;
+  color:           inherit;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.aip .aip-process__link-card:hover {
+  transform:    translateY(-2px);
+  border-color: #d8d8d8;
+  box-shadow:   0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.aip .aip-process__link-card-media {
+  display:       block;
+  overflow:      hidden;
+  border-radius: 6px;
+  background:    #f7f7f7;
+}
+
+.aip .aip-process__link-card-img {
+  display:      block;
+  width:        100%;
+  height:       auto;
+  aspect-ratio: 16 / 10;
+  object-fit:   cover;
+}
+
+.aip .aip-process__link-card-title {
+  font-family:    'Inter', sans-serif;
+  font-size:      0.82rem;
+  font-weight:    600;
+  letter-spacing: 0.02em;
+  color:          #333;
+  text-align:     center;
+}
+
+@media (max-width: 768px) {
+  .aip .aip-process__link-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── IMAGE CARD STACK CAROUSEL ────────────────────────────────── */
@@ -552,7 +804,7 @@
 .aip .aip-carousel-hint {
   font-size:      0.75rem;
   letter-spacing: 0.03em;
-  color:          rgba(255,255,255,0.35);
+  color:          #999;
   margin-bottom:  0.6rem;
   font-style:     italic;
   pointer-events: none;
@@ -607,143 +859,9 @@
   box-shadow: 0 12px 28px rgba(0,0,0,.22), 0 0 var(--aip-shadow,24px) rgba(0,0,0,.55);
 }
 
-/* ── VERTICAL PROCESS TIMELINE ────────────────────────────────── */
-.aip .section-story-timeline {
-  background-color: #0a0a0a;
-  position:         relative;
-  overflow:         hidden;
-}
-
-.aip .timeline_item {
-  z-index:               2;
-  display:               grid;
-  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
-  grid-column-gap:       0;
-  grid-row-gap:          0;
-  padding-top:           80px;
-  padding-bottom:        80px;
-  position:              relative;
-  max-width:             100%;
-  min-width:             0;
-  box-sizing:            border-box;
-}
-
-.aip .timeline_item.hidden {
-  display: none;
-}
-
-.aip .timeline_left {
-  text-align:     right;
-  justify-content: flex-end;
-  align-items:    flex-start;
-  padding-right:  2rem;
-  min-width:      0;
-}
-
-.aip .timeline_centre {
-  justify-content: center;
-  display:         flex;
-  position:        relative;
-}
-
-/* Vertical line through the center — background is now handled by
-   .story-progress-track (z-index 3) so this pseudo is transparent.
-   Keeping the pseudo in place for layout/spacing integrity. */
-.aip .timeline_centre::before {
-  content:          "";
-  position:         absolute;
-  top:              0;
-  bottom:           0;
-  left:             50%;
-  width:            2px;
-  background-color: transparent;
-  transform:        translateX(-50%);
-}
-
-.aip .timeline_circle {
-  background-color: #fff;
-  border-radius:    100%;
-  width:            15px;
-  min-width:        15px;
-  max-width:        15px;
-  height:           15px;
-  min-height:       15px;
-  max-height:       15px;
-  position:         sticky;
-  top:              50vh;
-  box-shadow:       0 0 0 8px #0a0a0a;
-  z-index:          2;
-}
-
-.aip .timeline_right {
-  padding-left: 2rem;
-  min-width:    0;
-  max-width:    100%;
-}
-
-/* Keep story body copy within readable measure on desktop */
-.aip .section-story-timeline .timeline_right .paragraph-new.white {
-  max-width: min(65ch, 100%);
-}
-
-.aip .timeline_date-text {
-  color:          #fff;
-  letter-spacing: -0.03em;
-  font-size:      48px;
-  font-weight:    500;
-  line-height:    1.2;
-  position:       sticky;
-  top:            50vh;
-}
-
-.aip .timeline_text {
-  color:       #fff;
-  font-size:   24px;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.aip .timeline_link {
-  opacity:        0.6;
-  color:          #fff;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  border-radius:  8px;
-  align-items:    center;
-  padding-top:    10px;
-  font-size:      14px;
-  font-weight:    700;
-  line-height:    1.3;
-  text-decoration: none;
-  transition:     opacity 0.3s;
-  display:        flex;
-}
-
-.aip .timeline_link:hover { opacity: 1; }
-
-.aip .link-icon {
-  width:      20px;
-  height:     20px;
-  margin-left: 8px;
-}
-
 .aip .margin-bottom-medium  { margin-bottom: 32px; }
 .aip .margin-bottom-xlarge  { margin-bottom: 56px; }
 .aip .inline-block           { display: inline-block; }
-
-.aip .overlay-fade-bottom {
-  background-image: linear-gradient(to top, #0a0a0a, transparent);
-  height:    80px;
-  position:  absolute;
-  inset:     auto 0 0;
-}
-
-.aip .overlay-fade-top {
-  background-image: linear-gradient(#0a0a0a, transparent);
-  height:   80px;
-  position: absolute;
-  inset:    0 0 auto;
-}
 
 /* ── PRODUCT SECTION ──────────────────────────────────────────── */
 .aip .div-block-26 {
@@ -1265,47 +1383,6 @@
     font-size: clamp(2rem, 6vw, 4rem);
   }
 
-  /* Story phases wrapper — avoid double horizontal padding with .timeline_item */
-  .aip .section-story-timeline .aip-story-phases {
-    max-width:    none;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  /* Story timeline: vertical blocks, no centre rail */
-  .aip .section-story-timeline .timeline_item {
-    display:               flex;
-    flex-direction:        column;
-    align-items:           stretch;
-    gap:                   1rem;
-    grid-template-columns: unset;
-    padding-top:           48px;
-    padding-bottom:        48px;
-  }
-  .aip .section-story-timeline .timeline_centre {
-    display: none;
-  }
-  .aip .section-story-timeline .timeline_left {
-    text-align:    left;
-    justify-content: flex-start;
-    align-items:   flex-start;
-    padding-right: 0;
-    order:         1;
-  }
-  .aip .section-story-timeline .timeline_right {
-    padding-left: 0;
-    order:        2;
-  }
-  .aip .timeline_date-text {
-    font-size:  24px;
-    position:   relative;
-    top:        auto;
-  }
-  .aip .timeline_circle {
-    position: relative;
-    top:      auto;
-  }
-
   .aip .timeline {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1404,17 +1481,6 @@
   /* Not Your Typical UX — horizontal milestone rail */
   .aip .aip-context-milestones {
     display: none;
-  }
-
-  /* The Story — match page gutters on small screens */
-  .aip .section-story-timeline .aip-story-phases .timeline_item {
-    padding-left:  max(1.25rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
-  }
-  .aip .section-story-timeline .story-intro.container-limit-width,
-  .aip .section-story-timeline .container-limit-width.story-intro {
-    padding-left:  max(1.25rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
   }
 
   /* Bento: readable collapse + reliable tap target */
@@ -1700,7 +1766,6 @@
 
 @media (max-width: 768px) {
   .aip .ai-bubbles          { display: inline-block; }
-  .aip .story-progress-track { display: none; }
   .aip .timeline10_row {
     grid-template-columns: 1fr;
   }
@@ -1781,6 +1846,56 @@
 .aip .aip-proto-persona-btn:not([aria-selected="true"]):not(:disabled):hover {
   border-color: #d0d0d0 !important;
   background:   #fff    !important;
+}
+
+/* Checkout destination banner */
+.aip .aip-checkout-banner {
+  position:   relative;
+  width:      100%;
+  height:     clamp(80px, 22vw, 120px);
+  overflow:   hidden;
+  flex-shrink: 0;
+}
+
+@media (min-width: 641px) {
+  .aip .aip-checkout-banner {
+    height: clamp(120px, 14vw, 160px);
+  }
+}
+
+.aip .aip-checkout-banner__img {
+  width:           100%;
+  height:          100%;
+  object-fit:      cover;
+  object-position: center;
+  display:         block;
+}
+
+.aip .aip-checkout-banner__gradient {
+  position:        absolute;
+  inset:           0;
+  pointer-events:  none;
+  background:      linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.08) 78%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+}
+
+.aip .aip-checkout-banner--skeleton {
+  background:      linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation:       aip-shimmer 1.4s ease infinite;
+}
+
+@keyframes aip-banner-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.aip .aip-checkout-banner--fade-in {
+  animation: aip-banner-fade-in 380ms ease-out;
 }
 
 /* Skeleton shimmer */
@@ -2269,4 +2384,1247 @@
   text-transform: uppercase;
   color:          #bbb;
   margin-bottom:  14px;
+}
+
+/* ── AiIdea — The Concept / Invisible AI ─────────────────────── */
+
+.aip .aip-idea__eyebrow-wrap {
+  margin-bottom: 0;
+}
+
+.aip .aip-idea__accent-bar {
+  height:        2.5px;
+  width:         44px;
+  background:    var(--aip-rainbow);
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+
+.aip .aip-idea__eyebrow {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  font-weight:    500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color:          #aaa;
+  margin-bottom:  6px;
+}
+
+.aip .aip-idea .h2 {
+  margin-top: 0;
+}
+
+.aip .aip-idea__lead-out {
+  margin-bottom: 0;
+}
+
+.aip .aip-idea__cards {
+  list-style: none;
+  margin:     44px 0 0;
+  padding:    0;
+  display:    grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:        18px;
+}
+
+.aip .aip-idea__card {
+  position:         relative;
+  display:          flex;
+  flex-direction:   column;
+  padding:          22px;
+  background:       #fff;
+  border:           1px solid #e4e4e4;
+  border-radius:    12px;
+  overflow:         hidden;
+}
+
+.aip .aip-idea__card::after {
+  content:       '';
+  position:      absolute;
+  left:          0;
+  right:         0;
+  bottom:        0;
+  height:        2px;
+  background:    var(--aip-rainbow);
+  pointer-events: none;
+}
+
+.aip .aip-idea__card-icon {
+  display:         flex;
+  align-items:     center;
+  justify-content: flex-start;
+  width:           36px;
+  height:          36px;
+  margin-bottom:   14px;
+  color:           #333;
+}
+
+.aip .aip-idea__card-title {
+  margin:         0 0 8px;
+  font-family:    'Inter', sans-serif;
+  font-size:      17px;
+  font-weight:    600;
+  line-height:    1.35;
+  color:          #111;
+}
+
+.aip .aip-idea__card-desc {
+  margin:       0;
+  font-family:  'Inter', sans-serif;
+  font-size:    14.5px;
+  line-height:  1.55;
+  font-weight:  400;
+  color:        #555;
+}
+
+@media (max-width: 640px) {
+  .aip .aip-idea__cards {
+    grid-template-columns: 1fr;
+    gap:                   16px;
+  }
+
+  .aip .aip-process__line-bg,
+  .aip .aip-process__line-fill {
+    left:  6%;
+    width: 88%;
+  }
+
+  .aip .aip-process__nodes {
+    gap: 0.25rem 0.35rem;
+  }
+
+  .aip .aip-process__node {
+    padding: 0.45rem 0.2rem 0.6rem;
+  }
+
+  .aip .aip-process__node-title {
+    font-size: 0.82rem;
+  }
+
+  .aip .aip-process__node-summary {
+    font-size:   0.72rem;
+    -webkit-line-clamp: 4;
+  }
+
+  .aip .aip-process__panel {
+    padding: 1.25rem 1.15rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aip .aip-process__line-fill,
+  .aip .aip-process__node,
+  .aip .aip-process__panel-inner {
+    transition: none;
+    animation:  none;
+  }
+}
+
+/* ── AiProblem — evidence gallery + personalised solution ─────── */
+
+.aip .aip-problem {
+  background: #fafafa;
+}
+
+.aip .aip-problem .h2 {
+  margin-top: 0;
+}
+
+.aip .aip-problem__stack {
+  display:        flex;
+  flex-direction: column;
+  gap:            0;
+  margin-bottom:  2.5rem;
+}
+
+.aip .aip-problem__block {
+  display:        flex;
+  flex-direction: column;
+}
+
+.aip .aip-problem__label {
+  display:        block;
+  font-family:    'DM Mono', monospace;
+  font-size:      9px;
+  font-weight:    500;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color:          #999;
+  margin-bottom:  0.65rem;
+}
+
+.aip .aip-problem__subtitle {
+  margin:      0 0 1rem;
+  max-width:   72ch;
+  font-family: 'Inter', sans-serif;
+  font-size:   0.92rem;
+  line-height: 1.55;
+  color:       #555;
+}
+
+.aip .aip-problem__evidence-zone {
+  padding:       1.15rem 1rem 1rem;
+  background:    #f7f7f7;
+  border-radius: 12px;
+  border:        1px solid #ececec;
+}
+
+.aip .aip-problem__gallery-scroll-wrap {
+  position: relative;
+}
+
+.aip .aip-problem__gallery-scroll-wrap::after {
+  content:        '';
+  position:       absolute;
+  top:            0;
+  right:          0;
+  bottom:         0;
+  width:          56px;
+  background:     linear-gradient(to right, rgba(247, 247, 247, 0), #f7f7f7 85%);
+  pointer-events: none;
+}
+
+.aip .aip-problem__evidence-zone .pflg-gallery--horizontal {
+  margin-top: 0;
+}
+
+.aip .aip-problem__divider {
+  display:         flex;
+  align-items:     center;
+  gap:             1rem;
+  margin:          3rem 0;
+  font-family:     'DM Mono', monospace;
+  font-size:       0.72rem;
+  font-weight:     500;
+  letter-spacing:  0.1em;
+  text-transform:  uppercase;
+  color:           #999;
+  white-space:     nowrap;
+}
+
+.aip .aip-problem__divider::before,
+.aip .aip-problem__divider::after {
+  content:    '';
+  flex:       1;
+  height:     1px;
+  background: #e4e4e4;
+}
+
+.aip .aip-problem__block--solution {
+  margin-top: 0;
+}
+
+.aip .aip-problem__solution-preview {
+  width: 100%;
+}
+
+.aip .aip-problem__caption {
+  margin:       0.85rem 0 0;
+  font-family:  'Inter', sans-serif;
+  font-size:    0.8rem;
+  line-height:  1.45;
+  color:        #666;
+  font-style:   italic;
+}
+
+.aip .aip-problem__caption--diagram {
+  margin-top: 0.65rem;
+}
+
+.aip .aip-problem__lead-out {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-problem__accordion {
+  margin-top: 0.25rem;
+  background: #fff;
+}
+
+.aip .aip-problem__accordion .accordion_toggle:hover {
+  color:            #111;
+  background-color: #f3f3f3;
+}
+
+.aip .aip-problem__diagram {
+  display:       block;
+  width:         100%;
+  max-width:     100%;
+  height:        auto;
+  margin-top:    1.25rem;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .aip .aip-problem__divider {
+    margin:    2.25rem 0;
+    font-size: 0.68rem;
+  }
+}
+
+/* ── AiResearchCompetitors — research + competitors ───────────── */
+
+.aip .aip-rc {
+  background: #fafafa;
+}
+
+.aip .aip-rc .h2 {
+  margin-top: 0;
+}
+
+.aip .aip-rc__intro-end {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-rc__accordion {
+  margin-bottom: 2.5rem;
+  background: #fff;
+}
+
+.aip .aip-rc__accordion .accordion_toggle:hover {
+  color:            #111;
+  background-color: #f3f3f3;
+}
+
+.aip .aip-rc__mindmap {
+  display:       block;
+  width:         100%;
+  max-width:     100%;
+  height:        auto;
+  margin-top:    1.25rem;
+  border:        1px solid #e4e4e4;
+  border-radius: 10px;
+}
+
+.aip .aip-rc__caption {
+  margin:       0.65rem 0 1.5rem;
+  font-size:    0.8rem;
+  line-height:  1.45;
+  color:        #666;
+  font-style:   italic;
+}
+
+.aip .aip-rc__insights {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+  display:    flex;
+  flex-direction: column;
+  gap:        0.85rem;
+}
+
+.aip .aip-rc__insight {
+  padding:          1rem 1.1rem 1rem 1rem;
+  background:       #f7f7f7;
+  border-left:      3px solid #c8c4e0;
+  border-radius:    0 10px 10px 0;
+  border-top:       1px solid #ececec;
+  border-right:     1px solid #ececec;
+  border-bottom:    1px solid #ececec;
+}
+
+.aip .aip-rc__insight-title {
+  display:       block;
+  font-family:   'Inter', sans-serif;
+  font-size:     1rem;
+  font-weight:   600;
+  line-height:   1.4;
+  color:         #111;
+  margin-bottom: 0.35rem;
+}
+
+.aip .aip-rc__insight-body {
+  display:     block;
+  font-family: 'Inter', sans-serif;
+  font-size:   0.95rem;
+  line-height: 1.6;
+  color:       #555;
+}
+
+.aip .aip-rc__competitors-block {
+  margin-bottom: 2rem;
+  scroll-margin-top: 6rem;
+}
+
+.aip .aip-rc__subheading {
+  margin:         0 0 1.25rem;
+  font-family:    'Montserrat', sans-serif;
+  font-size:      1.5rem;
+  font-weight:    700;
+  line-height:    1.3;
+  color:          #111;
+  text-transform: capitalize;
+}
+
+.aip .aip-rc__subheading--insights {
+  margin-top: 2.5rem;
+}
+
+.aip .aip-rc__platform-grid {
+  display:               grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:                   16px;
+  list-style:            none;
+  margin:                0;
+  padding:               0;
+}
+
+.aip .aip-rc__platform-card {
+  display:        flex;
+  flex-direction: column;
+  padding:        22px;
+  background:     #fff;
+  border:         1px solid #e4e4e4;
+  border-radius:  12px;
+}
+
+.aip .aip-rc__platform-name {
+  margin:        0 0 0.45rem;
+  font-family:   'Outfit', 'Inter', sans-serif;
+  font-size:     17px;
+  font-weight:   700;
+  line-height:   1.25;
+  color:         #111;
+}
+
+.aip .aip-rc__platform-positioning {
+  margin:       0;
+  font-family:  'Inter', sans-serif;
+  font-size:    14px;
+  line-height:  1.45;
+  color:        #666;
+}
+
+.aip .aip-rc__platform-divider {
+  height:        1px;
+  margin:        0.9rem 0 0.75rem;
+  background:    #e4e4e4;
+}
+
+.aip .aip-rc__platform-list-label {
+  margin:         0 0 0.4rem;
+  font-family:    'DM Mono', monospace;
+  font-size:      11px;
+  font-weight:    500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color:          #999;
+}
+
+.aip .aip-rc__platform-list-label + .aip-rc__platform-list {
+  margin-bottom: 0.75rem;
+}
+
+.aip .aip-rc__platform-list {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+}
+
+.aip .aip-rc__platform-list-item {
+  display:     flex;
+  align-items: flex-start;
+  gap:         0.45rem;
+  font-family: 'Inter', sans-serif;
+  font-size:   14px;
+  line-height: 1.35;
+  color:       #333;
+  margin-bottom: 0.35rem;
+}
+
+.aip .aip-rc__platform-list-item:last-child {
+  margin-bottom: 0;
+}
+
+.aip .aip-rc__marker {
+  flex-shrink:   0;
+  width:         7px;
+  height:        7px;
+  margin-top:    0.35em;
+  border-radius: 999px;
+}
+
+.aip .aip-rc__marker--strength {
+  background: #4ecdc4;
+}
+
+.aip .aip-rc__marker--gap {
+  background: #d94f4f;
+}
+
+.aip .aip-rc__table-block {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-rc__table-block:last-child {
+  margin-bottom: 0;
+}
+
+.aip .aip-rc__table-heading {
+  margin:        0 0 1rem;
+  font-family:   'Inter', sans-serif;
+  font-size:     1.125rem;
+  font-weight:   600;
+  line-height:   1.35;
+  color:         #111;
+}
+
+.aip .aip-rc__table-scroll {
+  width:      100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0.5rem;
+}
+
+.aip .aip-rc__solutions-table {
+  display:               grid;
+  grid-template-columns: minmax(9rem, 1.1fr) minmax(10rem, 1.2fr) minmax(10rem, 1.2fr);
+  min-width:             640px;
+  border:                1px solid #e4e4e4;
+  border-radius:         10px;
+  overflow:              hidden;
+  background:            #fff;
+}
+
+.aip .aip-rc__solutions-row {
+  display: contents;
+}
+
+.aip .aip-rc__solutions-row--head .aip-rc__solutions-cell {
+  background:    #f3f3f3;
+  font-weight:   600;
+  font-size:     0.85rem;
+  color:         #333;
+}
+
+.aip .aip-rc__solutions-row--alt .aip-rc__solutions-cell {
+  background: #fafafa;
+}
+
+.aip .aip-rc__solutions-cell {
+  padding:       0.85rem 1rem;
+  font-size:     0.9rem;
+  line-height:   1.5;
+  color:         #444;
+  border-bottom: 1px solid #ececec;
+  border-right:  1px solid #ececec;
+}
+
+.aip .aip-rc__solutions-cell:last-child {
+  border-right: none;
+}
+
+.aip .aip-rc__solutions-row:last-child .aip-rc__solutions-cell {
+  border-bottom: none;
+}
+
+.aip .aip-rc__solutions-cell--type strong {
+  font-weight: 600;
+  color:       #111;
+}
+
+.aip .aip-rc__insight-cards {
+  list-style: none;
+  margin:     0 0 2rem;
+  padding:    0;
+  display:    grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:        18px;
+}
+
+.aip .aip-rc__insight-card {
+  position:       relative;
+  display:        flex;
+  flex-direction: column;
+  padding:        22px;
+  background:     #fff;
+  border:         1px solid #e4e4e4;
+  border-radius:  12px;
+  overflow:       hidden;
+}
+
+.aip .aip-rc__insight-card::after {
+  content:    '';
+  position:   absolute;
+  left:       0;
+  right:      0;
+  bottom:     0;
+  height:     2px;
+  background: var(--aip-rainbow);
+  pointer-events: none;
+}
+
+.aip .aip-rc__insight-card-title {
+  margin:       0 0 8px;
+  font-family:  'Inter', sans-serif;
+  font-size:    17px;
+  font-weight:  600;
+  line-height:  1.35;
+  color:        #111;
+}
+
+.aip .aip-rc__insight-card-desc {
+  margin:      0;
+  font-family: 'Inter', sans-serif;
+  font-size:   14.5px;
+  line-height: 1.55;
+  color:       #555;
+}
+
+.aip .aip-rc__closing {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+  .aip .aip-rc__platform-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .aip .aip-rc__insight-cards {
+    grid-template-columns: 1fr;
+    gap:                   16px;
+  }
+
+  .aip .aip-rc__platform-grid {
+    grid-template-columns: 1fr;
+    gap:                   16px;
+  }
+}
+
+/* ── AiGoal — thesis statement + principle pills ─────────────── */
+
+.aip .aip-goal {
+  margin-top:    80px;
+  margin-bottom: 80px;
+  background:    transparent;
+}
+
+.aip .aip-goal__statement {
+  margin:        0 0 1.75rem;
+  max-width:     75ch;
+  font-family:   'Inter', sans-serif;
+  font-size:     clamp(1.2rem, 2.2vw, 1.45rem);
+  font-weight:   500;
+  line-height:   1.55;
+  color:         #111;
+}
+
+.aip .aip-goal__support {
+  margin-bottom: 2.25rem;
+}
+
+.aip .aip-goal__principles {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+  display:    flex;
+  flex-direction: column;
+  gap:        0.85rem;
+  max-width:  100%;
+}
+
+.aip .aip-goal__principle-row {
+  display:     flex;
+  align-items: center;
+  flex-wrap:   wrap;
+  gap:         0.5rem 0.65rem;
+}
+
+.aip .aip-goal__principle-text {
+  font-family: 'Inter', sans-serif;
+  font-size:   15px;
+  font-weight: 400;
+  line-height: 1.4;
+  color:       #444;
+}
+
+/* ── AiInsightTag — principle pills ───────────────────────────── */
+
+.aip .ai-insight-tag {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             0.35rem;
+  padding:         3px 10px 4px;
+  border-radius:   999px;
+  font-family:     'Outfit', 'Inter', sans-serif;
+  font-size:       12.5px;
+  font-weight:     500;
+  line-height:     1.25;
+  letter-spacing:  0.01em;
+  vertical-align:  middle;
+  white-space:     nowrap;
+  background:      var(--ai-tag-bg);
+  color:           var(--ai-tag-text);
+  flex-shrink:     0;
+}
+
+.aip .ai-insight-tag__icon {
+  width:       15px;
+  height:      15px;
+  flex-shrink: 0;
+  color:       var(--ai-tag-color);
+}
+
+.aip .ai-insight-tag__label {
+  color: inherit;
+}
+
+.aip .ai-insight-tag-group {
+  display:        inline-flex;
+  flex-wrap:      wrap;
+  align-items:    center;
+  gap:            0.4rem;
+  vertical-align: middle;
+}
+
+.aip .aip-rc__insight-card .ai-insight-tag {
+  margin-bottom: 12px;
+}
+
+/* ── AiOutcome — evaluation + persona accordions ─────────────── */
+
+.aip .aip-outcome {
+  background: #fafafa;
+}
+
+.aip .aip-outcome .h2 {
+  margin-top: 0;
+}
+
+.aip .aip-outcome__intro-end {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-outcome__verdict-scroll {
+  width:      100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 2.5rem;
+}
+
+.aip .aip-outcome__verdict-table {
+  width:           100%;
+  min-width:       720px;
+  border-collapse: collapse;
+  background:      #fff;
+  border:          1px solid #e4e4e4;
+  border-radius:   12px;
+  overflow:        hidden;
+  font-family:     'Inter', sans-serif;
+  font-size:       0.9rem;
+  line-height:     1.5;
+}
+
+.aip .aip-outcome__verdict-table th,
+.aip .aip-outcome__verdict-table td {
+  padding:       0.85rem 1rem;
+  text-align:    left;
+  vertical-align: top;
+  border-bottom: 1px solid #ececec;
+  border-right:  1px solid #ececec;
+}
+
+.aip .aip-outcome__verdict-table th {
+  background:    #f3f3f3;
+  font-weight:   600;
+  font-size:     0.8rem;
+  color:         #444;
+}
+
+.aip .aip-outcome__verdict-table th:last-child,
+.aip .aip-outcome__verdict-table td:last-child {
+  border-right: none;
+}
+
+.aip .aip-outcome__verdict-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.aip .aip-outcome__verdict-profile {
+  font-size: 0.82rem;
+  color:     #666;
+}
+
+.aip .aip-outcome__verdict--strong {
+  color: #1a7a42;
+}
+
+.aip .aip-outcome__verdict--partial {
+  color: #9a7b18;
+}
+
+.aip .aip-outcome__personas {
+  display:        flex;
+  flex-direction: column;
+  gap:            1rem;
+  margin-bottom:  2.5rem;
+}
+
+.aip .aip-outcome__persona-accordion {
+  background: #fff;
+}
+
+.aip .aip-outcome__persona-accordion .accordion_toggle:hover {
+  color:            #111;
+  background-color: #f3f3f3;
+}
+
+.aip .aip-outcome__accordion-label-wrap {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-start;
+  gap:            0.5rem;
+  text-align:     left;
+  flex:           1;
+  min-width:      0;
+}
+
+.aip .aip-outcome__persona-tags {
+  margin: 0;
+}
+
+.aip .aip-outcome__persona-summary {
+  margin-top: 0;
+}
+
+.aip .aip-outcome__json-accordion {
+  margin-bottom: 1.25rem;
+  border-color:  #ececec;
+  background:    #fafafa;
+}
+
+.aip .aip-outcome__json-accordion .accordion_toggle {
+  padding: 0.65rem 0.85rem;
+}
+
+.aip .aip-outcome__json-accordion .u-text-style-h5 {
+  font-size:   1rem;
+  font-weight: 500;
+  color:       #666;
+}
+
+.aip .aip-outcome__json-accordion .accordion_1_body {
+  padding-top: 0.5rem;
+}
+
+.aip .aip-outcome__code {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.aip .aip-outcome__findings {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+  display:    flex;
+  flex-direction: column;
+  gap:        0.75rem;
+}
+
+.aip .aip-outcome__finding {
+  display:     flex;
+  align-items: flex-start;
+  gap:         0.65rem;
+  padding:     0.85rem 1rem;
+  background:  #fafafa;
+  border-radius: 0 8px 8px 0;
+  border-top:    1px solid #ececec;
+  border-right:  1px solid #ececec;
+  border-bottom: 1px solid #ececec;
+}
+
+.aip .aip-outcome__finding--pass {
+  border-left: 3px solid #4ecdc4;
+}
+
+.aip .aip-outcome__finding--partial {
+  border-left: 3px solid #ffd166;
+}
+
+.aip .aip-outcome__finding--fail {
+  border-left: 3px solid #d94f4f;
+}
+
+.aip .aip-outcome__finding-marker {
+  flex-shrink:   0;
+  width:         8px;
+  height:        8px;
+  margin-top:    0.45em;
+  border-radius: 999px;
+}
+
+.aip .aip-outcome__finding--pass .aip-outcome__finding-marker {
+  background: #4ecdc4;
+}
+
+.aip .aip-outcome__finding--partial .aip-outcome__finding-marker {
+  background: #e6b422;
+}
+
+.aip .aip-outcome__finding--fail .aip-outcome__finding-marker {
+  background: #d94f4f;
+}
+
+.aip .aip-outcome__finding-title {
+  display:       block;
+  font-family:   'Inter', sans-serif;
+  font-size:     1rem;
+  font-weight:   600;
+  line-height:   1.35;
+  color:         #111;
+  margin-bottom: 0.25rem;
+}
+
+.aip .aip-outcome__finding-desc {
+  margin:      0;
+  font-size:   0.9rem;
+  line-height: 1.55;
+  color:       #555;
+}
+
+.aip .aip-outcome__summary-heading {
+  margin:         0 0 1rem;
+  font-family:    'Montserrat', sans-serif;
+  font-size:      1.5rem;
+  font-weight:    700;
+  line-height:    1.3;
+  color:          #111;
+  text-transform: capitalize;
+}
+
+.aip .aip-outcome__closing {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .aip .aip-outcome__verdict-table {
+    min-width: 0;
+    border:    none;
+    background: transparent;
+  }
+
+  .aip .aip-outcome__verdict-table thead {
+    display: none;
+  }
+
+  .aip .aip-outcome__verdict-table tbody tr {
+    display:       block;
+    margin-bottom: 1rem;
+    background:    #fff;
+    border:        1px solid #e4e4e4;
+    border-radius: 12px;
+    overflow:      hidden;
+  }
+
+  .aip .aip-outcome__verdict-table td {
+    display:       block;
+    border:        none;
+    border-bottom: 1px solid #ececec;
+    padding:       0.65rem 1rem;
+  }
+
+  .aip .aip-outcome__verdict-table td:last-child {
+    border-bottom: none;
+  }
+
+  .aip .aip-outcome__verdict-table td::before {
+    content:       attr(data-label) ': ';
+    display:       block;
+    font-size:     0.68rem;
+    font-weight:   600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color:         #999;
+    margin-bottom: 0.2rem;
+    font-family:   'DM Mono', monospace;
+  }
+
+  .aip .aip-outcome__verdict-table td[data-label='Persona']::before {
+    display: none;
+  }
+}
+
+/* ── AiWhatsNext — roadmap + closing ─────────────────────────── */
+
+.aip .u-sr-only {
+  position: absolute;
+  width:    1px;
+  height:   1px;
+  padding:  0;
+  margin:   -1px;
+  overflow: hidden;
+  clip:     rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border:   0;
+}
+
+.aip .aip-whats-next {
+  background:     #fafafa;
+  margin-top:     80px;
+  padding-top:    24px;
+  padding-bottom: 80px;
+  border-top:     1px solid #ececec;
+}
+
+.aip .aip-whats-next .h2 {
+  margin-top: 0;
+}
+
+.aip .aip-wn__intro {
+  margin-bottom: 2rem;
+}
+
+.aip .aip-wn__road {
+  margin-bottom: 2.5rem;
+}
+
+.aip .aip-wn__scroll {
+  width:      100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding:    0.25rem 0 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.aip .aip-wn__timeline {
+  min-width: min(100%, 48rem);
+}
+
+.aip .aip-wn__track {
+  position:    relative;
+  display:     flex;
+  align-items: flex-start;
+  width:       100%;
+  min-width:   48rem;
+}
+
+.aip .aip-wn__line-bg,
+.aip .aip-wn__line-fill {
+  position:       absolute;
+  left:           6%;
+  width:          88%;
+  top:            1.15rem;
+  height:         3px;
+  border-radius:  999px;
+  pointer-events: none;
+}
+
+.aip .aip-wn__line-bg {
+  border-top: 2px dashed #d4d4d4;
+  background: none;
+  height:     0;
+}
+
+.aip .aip-wn__line-fill {
+  width:      var(--aip-wn-line-pct, 0%);
+  background: var(--aip-rainbow);
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aip .aip-wn__connector {
+  flex:         1 1 0.75rem;
+  min-width:    0.5rem;
+  max-width:    2.25rem;
+  align-self:   center;
+  margin-top:   0.85rem;
+  height:       3px;
+  border-radius: 3px;
+  position:     relative;
+  z-index:      1;
+}
+
+.aip .aip-wn__connector--solid {
+  background: var(--aip-rainbow);
+}
+
+.aip .aip-wn__connector--dashed {
+  height:     0;
+  border-top: 2px dashed #d4d4d4;
+  background: none;
+}
+
+.aip .aip-wn__node {
+  flex:           1 1 0;
+  min-width:      0;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  text-align:     center;
+  margin:         0;
+  padding:        0.55rem 0.35rem 0.75rem;
+  border:         1.5px solid transparent;
+  border-radius:  14px;
+  background:     transparent;
+  cursor:         pointer;
+  font:           inherit;
+  color:          inherit;
+  position:       relative;
+  z-index:        2;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.aip .aip-wn__node--future {
+  opacity: 0.82;
+}
+
+.aip .aip-wn__node--active {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--aip-rainbow) border-box;
+  border:     1.5px solid transparent;
+  box-shadow: 0 6px 24px rgba(123, 97, 255, 0.12);
+  transform:  translateY(-2px);
+  opacity:    1;
+}
+
+.aip .aip-wn__node:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.aip .aip-wn__status-wrap {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  height:          2.35rem;
+  margin-bottom:   0.4rem;
+}
+
+.aip .aip-wn__status-icon {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.aip .aip-wn__status-icon--complete {
+  width:         1.45rem;
+  height:        1.45rem;
+  border-radius: 999px;
+  background:    #4ecdc4;
+  color:         #fff;
+  font-size:     0.72rem;
+  font-weight:   800;
+  line-height:   1;
+  box-shadow:    0 0 0 3px rgba(78, 205, 196, 0.25);
+}
+
+.aip .aip-wn__status-icon--future {
+  width:         1.2rem;
+  height:        1.2rem;
+  border-radius: 999px;
+  border:        2px dashed #ccc;
+  background:    #fff;
+}
+
+.aip .aip-wn__node-title {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size:   0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color:       #111;
+}
+
+.aip .aip-wn__node-summary {
+  margin-top:  0.35rem;
+  font-family: 'Inter', sans-serif;
+  font-size:   0.78rem;
+  line-height: 1.42;
+  color:       #666;
+}
+
+.aip .aip-wn__panel-shell {
+  margin-top:  1.25rem;
+  min-height:  240px;
+}
+
+.aip .aip-wn__panel {
+  padding:       1.5rem 1.5rem 1.65rem;
+  background:    #fff;
+  border:        1px solid #e4e4e4;
+  border-radius: 14px;
+}
+
+.aip .aip-wn__panel--animate {
+  animation: aip-wn-panel-in 0.38s ease;
+}
+
+.aip .aip-wn__panel .paragraph-new {
+  margin: 0;
+}
+
+@keyframes aip-wn-panel-in {
+  from {
+    opacity:   0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity:   1;
+    transform: translateY(0);
+  }
+}
+
+.aip .aip-wn__statement {
+  margin:      2.5rem 0 0;
+  max-width:   75ch;
+  font-family: 'Inter', sans-serif;
+  font-size:   1rem;
+  line-height: 1.65;
+  color:       #555;
+}
+
+.aip .aip-wn__actions {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       0.65rem 1rem;
+  margin-top: 1.75rem;
+}
+
+.aip .aip-wn__btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         0.55rem 1.2rem;
+  border:          1px solid #e4e4e4;
+  border-radius:   999px;
+  background:      #fff;
+  font-family:     'Inter', sans-serif;
+  font-size:       0.88rem;
+  font-weight:     500;
+  color:           #333;
+  text-decoration: none;
+  cursor:          pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.aip .aip-wn__btn:hover {
+  border-color: #ccc;
+  color:        #111;
+  background:   #fafafa;
+}
+
+@media (max-width: 768px) {
+  .aip .aip-wn__track {
+    min-width: 40rem;
+  }
+
+  .aip .aip-wn__node-title {
+    font-size: 0.82rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aip .aip-wn__panel--animate,
+  .aip .aip-wn__line-fill,
+  .aip .aip-wn__node {
+    animation:  none;
+    transition: none;
+  }
 }

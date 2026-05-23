@@ -5,7 +5,7 @@
 
   Architecture (Webflow-style "Scroller Grid"):
   • Outer section: (N + 1) × 100vh tall — creates the scroll runway
-  • Sticky shell: position: sticky; top: 0; height: 100vh — stays in viewport
+  • Sticky shell: position: sticky; top: 0; height: 93vh — stays in viewport (~7vh gap below for desk title)
     while the outer section scrolls beneath it
   • Active card: derived from scroll progress through the outer section
     — each project occupies exactly one viewport-height of scroll travel
@@ -29,7 +29,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { DECK_CARDS, type DeckCard, type DeckTag } from '../lib/deckData';
 import AICheckoutDemo from './AICheckoutDemo';
-import DeckFoodHubMini from './DeckFoodHubMini';
+import DeckFoodHubScene from './DeckFoodHubScene';
 import KoiPond from './KoiPond';
 
 /* ── Tag chips — GitHub-style pills mirroring the supermarket case study ── */
@@ -95,6 +95,13 @@ const TAB_X = [26, 210, 380];
 const DUR  = 440;
 const EASE = 'cubic-bezier(0.38, 0, 0.18, 1)';
 
+/** Sticky deck panel height as a fraction of viewport (~7vh gap below for desk title peek). */
+const DECK_STICKY_VH = 0.93;
+/** Vertical padding inside sticky shell (top + bottom), matches inline padding. */
+const DECK_SHELL_V_PAD = 16;
+/** Sticky deck panel must be this visible before card entrance animations run. */
+const DECK_IN_VIEW_RATIO = 0.6;
+
 /* ── Tab colour themes ─────────────────────────────────────────────── */
 
 interface TabTheme {
@@ -133,10 +140,22 @@ const getBorder = (pos: number) => `hsl(0,0%,${(87  - pos * 0.55).toFixed(1)}%)`
 
 /* ── Main component ─────────────────────────────────────────────────── */
 
-const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stickyShellRef) {
+type ProjectDeckProps = {
+  /** Homepage load-in: stagger tab strip reveal with page intro CSS. */
+  introReveal?: boolean;
+};
+
+const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function ProjectDeck(
+  { introReveal = false },
+  forwardedRef,
+) {
   const [isMobile, setIsMobile] = useState(false);
   const [cardH, setCardH] = useState(760);
   const [order, setOrder] = useState(DECK_CARDS.map(c => c.id));
+  const [deckInView, setDeckInView]             = useState(false);
+  const [stickyMounted, setStickyMounted]       = useState(false);
+  const deckInViewLatched = useRef(false);
+  const stickyShellObserveRef = useRef<HTMLDivElement | null>(null);
   const busy          = useRef(false);
   const ordRef        = useRef(DECK_CARDS.map(c => c.id));
   const timer         = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,17 +170,55 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  const assignStickyShellRef = useCallback((node: HTMLDivElement | null) => {
+    stickyShellObserveRef.current = node;
+    setStickyMounted(Boolean(node));
+    if (typeof forwardedRef === 'function') {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  }, [forwardedRef]);
+
+  /* One-time gate: card entrance animations wait until deck is ~60% visible. */
+  useEffect(() => {
+    const el = stickyShellObserveRef.current;
+    if (!el || deckInViewLatched.current) return undefined;
+
+    const latch = () => {
+      if (deckInViewLatched.current) return;
+      deckInViewLatched.current = true;
+      setDeckInView(true);
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if ((entry?.intersectionRatio ?? 0) >= DECK_IN_VIEW_RATIO) {
+          latch();
+        }
+      },
+      { threshold: [0, 0.25, 0.5, DECK_IN_VIEW_RATIO, 0.75, 1] },
+    );
+
+    io.observe(el);
+
+    /* Already in view on load (e.g. short viewport or return scroll). */
+    const rect = el.getBoundingClientRect();
+    const visibleH = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+    if (rect.height > 0 && visibleH / rect.height >= DECK_IN_VIEW_RATIO) {
+      latch();
+    }
+
+    return () => io.disconnect();
+  }, [isMobile, stickyMounted]);
+
   useEffect(() => {
     /*
-      Compute card height so the full deck sits inside the viewport with
-      ~3% bottom clearance. Sticky shell has ~84px vertical padding total
-      (top: clamp(0.25rem,1vh,0.75rem) ≈ 4–12px + bottom: 4.5rem = 72px).
-      TOTAL_H = TAB_H + (N-1)*STRIP + cardH → solve for cardH.
-      Desktop: taller minimum so the FoodHub phone + hint fit comfortably.
+      Fill the sticky shell: TOTAL_H = TAB_H + (N-1)*STRIP + cardH.
+      Shell height = 93vh minus minimal vertical padding (no scroll-indicator gap).
     */
     const computeCardH = () => {
-      /* Tighter vertical runway so the deck wraps closer to content (phone drives feel). */
-      const available = Math.round(0.92 * (window.innerHeight - 32));
+      const available = Math.round(window.innerHeight * DECK_STICKY_VH - DECK_SHELL_V_PAD);
       const minDeck = isMobile ? 400 : 480;
       setCardH(Math.max(minDeck, available - TAB_H - (N - 1) * STRIP));
     };
@@ -192,36 +249,36 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
 
   /* ── Scroll-progress driven card selection ─────────────────────── */
   /*
-    Outer section = 300vh. Sticky shell = 100vh.
-    scrollRange = 200vh. Each project occupies 100vh of that range:
-      0–100vh  → project 0,  100–200vh → project 1,  200vh → project 2.
+    Outer section = 300vh. Sticky shell = 93vh (~7vh gap below for desk title).
+    scrollRange = section height − viewport height. Each project ≈ 100vh of scroll:
+      0–100vh → project 0, 100–200vh → project 1, 200vh+ → project 2.
   */
-  useEffect(() => {
-    const onScroll = () => {
-      const el = scrollerRef.current;
-      if (!el) return;
+  const updateDeckScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
 
-      const rect         = el.getBoundingClientRect();
-      const scrollOffset = -rect.top;
-      const scrollRange  = rect.height - window.innerHeight;
+    const rect         = el.getBoundingClientRect();
+    const scrollOffset = -rect.top;
+    const scrollRange  = Math.max(0, rect.height - window.innerHeight);
 
-      /* Outside sticky period — nothing to do */
-      if (scrollOffset < 0 || scrollOffset > scrollRange) return;
+    if (scrollOffset < 0 || scrollOffset > scrollRange) return;
 
-      const targetId = Math.min(
-        Math.floor(scrollOffset / window.innerHeight),
-        N - 1,
-      );
+    const targetId = Math.min(
+      Math.floor(scrollOffset / window.innerHeight),
+      N - 1,
+    );
 
-      if (targetId !== lastTargetRef.current) {
-        lastTargetRef.current = targetId;
-        select(targetId);
-      }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    if (targetId !== lastTargetRef.current) {
+      lastTargetRef.current = targetId;
+      select(targetId);
+    }
   }, [select]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', updateDeckScroll, { passive: true });
+    updateDeckScroll();
+    return () => window.removeEventListener('scroll', updateDeckScroll);
+  }, [updateDeckScroll]);
 
   /* ── Keyboard — bounded, no looping ────────────────────────────── */
   useEffect(() => {
@@ -250,14 +307,13 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
   /* ── Mobile flat view — clean stacked cards, no scroll section ─── */
   if (isMobile) {
     return (
-      <div style={{ padding: '0 1.25rem 4rem' }}>
+      <div ref={assignStickyShellRef} style={{ padding: '0 1.25rem 4rem' }}>
         {DECK_CARDS.map(card => {
-          const theme    = TAB_THEMES[card.id];
-          const hasLink  = Boolean(card.href);
-          const Wrapper  = (hasLink && card.id !== 0 ? 'a' : 'div') as 'a' | 'div';
-          const wrapperProps = hasLink && card.id !== 0 && card.id !== 2
-            ? { href: card.href }
-            : {};
+          const theme = TAB_THEMES[card.id];
+          /* Card 1 only: whole-card link. Cards 0 & 2 use inner CTAs — never nest <a>. */
+          const useOuterLink = card.id === 1 && Boolean(card.href);
+          const Wrapper = (useOuterLink ? 'a' : 'div') as 'a' | 'div';
+          const wrapperProps = useOuterLink ? { href: card.href } : {};
           return (
             <Wrapper
               key={card.id}
@@ -330,8 +386,8 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
 
                 {card.id === 0 ? (
                   <>
-                    <div style={{ marginTop: 18, minHeight: 0 }}>
-                      <DeckFoodHubMini compact />
+                    <div style={{ marginTop: 18, minHeight: 220, position: 'relative' }}>
+                      <DeckFoodHubScene compact active={deckInView} />
                     </div>
                     {card.href && card.btn ? (
                       <a
@@ -383,51 +439,71 @@ const ProjectDeck = forwardRef<HTMLDivElement, {}>(function ProjectDeck(_, stick
     */
     <section
       ref={scrollerRef}
-      style={{ position: 'relative', height: '300vh', marginTop: '-2rem' }}
+      className={`deck-scroller${introReveal ? ' home-deck-intro' : ''}`}
+      style={{
+        position:  'relative',
+        height:    '300vh',
+        marginTop: '-2rem',
+      }}
     >
       {/* Sticky shell — remains in viewport for the full scroll runway */}
       <div
-        ref={stickyShellRef}
+        ref={assignStickyShellRef}
+        className="deck-sticky-shell"
         style={{
           position:       'sticky',
           top:            0,
-          height:         '100vh',
+          height:         `${DECK_STICKY_VH * 100}vh`,
           overflow:       'hidden',
           display:        'flex',
           flexDirection:  'column',
           alignItems:     'center',
           justifyContent: 'flex-start',
-          padding:        'clamp(0.25rem, 1vh, 0.75rem) clamp(1.5rem, 3vw, 3rem) 1.5rem',
+          padding:        'clamp(0.25rem, 0.5vh, 0.5rem) clamp(1.5rem, 3vw, 3rem) clamp(0.25rem, 0.5vh, 0.5rem)',
           fontFamily:     "'DM Mono', 'Courier New', monospace",
         }}
       >
         <div
-          ref={deckRef}
-          tabIndex={0}
+          className="deck-sticky-shell__parallax"
           style={{
-            position:   'relative',
-            width:      'min(100%, 1240px)',
-            height:     TAB_H + (N - 1) * STRIP + cardH,
-            userSelect: 'none',
-            outline:    'none',
+            width:         '100%',
+            display:       'flex',
+            flexDirection: 'column',
+            alignItems:    'center',
+            flex:          1,
+            minHeight:     0,
           }}
         >
-          {DECK_CARDS.map(card => {
-            const pos     = order.indexOf(card.id);
-            const isFront = pos === 0;
-            return (
-              <CardPanel
-                key={card.id}
-                card={card}
-                pos={pos}
-                isFront={isFront}
-                tabX={TAB_X[card.id]}
-                theme={TAB_THEMES[card.id]}
-                cardH={cardH}
-                onPick={() => select(card.id)}
-              />
-            );
-          })}
+          <div
+            ref={deckRef}
+            tabIndex={0}
+            className="deck-card-stack"
+            style={{
+              position:   'relative',
+              width:      'min(100%, 1240px)',
+              height:     TAB_H + (N - 1) * STRIP + cardH,
+              userSelect: 'none',
+              outline:    'none',
+            }}
+          >
+            {DECK_CARDS.map(card => {
+              const pos     = order.indexOf(card.id);
+              const isFront = pos === 0;
+              return (
+                <CardPanel
+                  key={card.id}
+                  card={card}
+                  pos={pos}
+                  isFront={isFront}
+                  deckInView={deckInView}
+                  tabX={TAB_X[card.id]}
+                  theme={TAB_THEMES[card.id]}
+                  cardH={cardH}
+                  onPick={() => select(card.id)}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -439,16 +515,26 @@ export default ProjectDeck;
 /* ── CardPanel ──────────────────────────────────────────────────────── */
 
 interface CardPanelProps {
-  card:    DeckCard;
-  pos:     number;
-  isFront: boolean;
-  tabX:    number;
-  theme:   TabTheme;
-  cardH:   number;
-  onPick:  () => void;
+  card:       DeckCard;
+  pos:        number;
+  isFront:    boolean;
+  deckInView: boolean;
+  tabX:       number;
+  theme:      TabTheme;
+  cardH:      number;
+  onPick:     () => void;
 }
 
-function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanelProps) {
+function CardPanel({
+  card,
+  pos,
+  isFront,
+  deckInView,
+  tabX,
+  theme,
+  cardH,
+  onPick,
+}: CardPanelProps) {
   const [show, setShow] = useState(false);
 
   /* Content reveal: waits for deck transition to complete */
@@ -458,6 +544,8 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
     const t = setTimeout(() => setShow(true), DUR - 30);
     return () => clearTimeout(t);
   }, [isFront]);
+
+  const contentReady = show && deckInView;
 
   const top    = getTop(pos);
   const zi     = getZ(pos);
@@ -569,8 +657,8 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               minHeight:    0,
               display:      'flex',
               alignItems:   'stretch',
-              opacity:      show ? 1 : 0,
-              transform:    show ? 'translateY(0)' : 'translateY(9px)',
+              opacity:      contentReady ? 1 : 0,
+              transform:    contentReady ? 'translateY(0)' : 'translateY(9px)',
               transition:   'opacity 0.34s ease, transform 0.34s ease',
               overflow:     'hidden',
             }}>
@@ -642,7 +730,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
                   background:   '#0a1a12',
                   boxShadow:    '0 1px 4px rgba(0,0,0,0.1)',
                 }}>
-                  {show && <KoiPond />}
+                  {contentReady && <KoiPond />}
                 </div>
               </div>
             </div>
@@ -653,8 +741,8 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               minHeight:    0,
               display:      'flex',
               alignItems:   'stretch',
-              opacity:      show ? 1 : 0,
-              transform:    show ? 'translateY(0)' : 'translateY(9px)',
+              opacity:      contentReady ? 1 : 0,
+              transform:    contentReady ? 'translateY(0)' : 'translateY(9px)',
               transition:   'opacity 0.34s ease, transform 0.34s ease',
               overflow:     'hidden',
             }}>
@@ -718,7 +806,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
 
               {/* ── Right: interactive demo (no header — shown on left) ── */}
               <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', alignSelf: 'stretch' }}>
-                <AICheckoutDemo show={show} hideHeader />
+                <AICheckoutDemo show={contentReady} hideHeader />
               </div>
 
             </div>
@@ -729,8 +817,8 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               minHeight:  0,
               display:    'flex',
               alignItems: 'stretch',
-              opacity:    show ? 1 : 0,
-              transform:  show ? 'translateY(0)' : 'translateY(9px)',
+              opacity:    contentReady ? 1 : 0,
+              transform:  contentReady ? 'translateY(0)' : 'translateY(9px)',
               transition: 'opacity 0.34s ease, transform 0.34s ease',
               overflow:   'hidden',
             }}>
@@ -805,7 +893,7 @@ function CardPanel({ card, pos, isFront, tabX, theme, cardH, onPick }: CardPanel
               {/* ── Right: FoodHub mini (card 0) or placeholder ── */}
               {card.id === 0 ? (
                 <div className="deck-foodhub-right-panel">
-                  <DeckFoodHubMini />
+                  <DeckFoodHubScene active={contentReady} />
                 </div>
               ) : (
                 <div style={{

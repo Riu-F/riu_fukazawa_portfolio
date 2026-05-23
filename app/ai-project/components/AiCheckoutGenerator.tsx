@@ -4,6 +4,7 @@ import { useState, useRef }                from 'react';
 import { generateCheckout }                 from './ai-checkout-mock';
 import type { CheckoutData, TripContext }   from './ai-checkout-types';
 import CheckoutOutput, { Icon }             from './CheckoutOutput';
+import { getBannerForDestination }          from '../lib/checkout-banners';
 
 /* ── Form state ──────────────────────────────────────────────────── */
 interface FormState {
@@ -105,6 +106,7 @@ export default function AiCheckoutGenerator() {
 
   return (
     <section className="default-section" id="try-it-yourself">
+      <span id="section--the-product" aria-hidden="true" />
       <div className="default-container w-container">
         <p className="paragraph-new">
           Enter a traveller profile and generate a personalised post-checkout travel summary
@@ -326,6 +328,7 @@ export default function AiCheckoutGenerator() {
                   isLoading={isLoading}
                   error={error}
                   onRetry={runGenerate}
+                  bannerSrc={getBannerForDestination(form.destination)}
                 />
               ) : (
                 <IdlePlaceholder />

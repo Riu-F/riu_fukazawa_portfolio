@@ -8,6 +8,8 @@ export interface CheckoutOutputProps {
   isLoading?: boolean;
   error?:     string | null;
   onRetry?:   () => void;
+  /** When set, renders a full-width destination banner below the browser chrome. */
+  bannerSrc?: string;
 }
 
 /* ── Card width logic ────────────────────────────────────────────
@@ -57,6 +59,21 @@ export function Icon({ name, size = 15, stroke = '#666' }: { name: string; size?
     case 'chevron':  return <Svg size={size} stroke={stroke}><polyline points="6 9 12 15 18 9"/></Svg>;
     default:         return <Svg size={size} stroke={stroke}><circle cx="12" cy="12" r="5"/></Svg>;
   }
+}
+
+/* ── Destination banner ─────────────────────────────────────────── */
+function CheckoutBannerSkeleton() {
+  return <div className="aip-checkout-banner aip-checkout-banner--skeleton" aria-hidden="true" />;
+}
+
+function CheckoutBanner({ src }: { src: string }) {
+  return (
+    <div className="aip-checkout-banner aip-checkout-banner--fade-in">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" className="aip-checkout-banner__img" />
+      <div className="aip-checkout-banner__gradient" aria-hidden="true" />
+    </div>
+  );
 }
 
 /* ── Loading skeleton ────────────────────────────────────────────── */
@@ -275,7 +292,13 @@ function ExpandableCard({ card, isExpanded, compact, onToggle }: {
 }
 
 /* ── CheckoutOutput ──────────────────────────────────────────────── */
-export default function CheckoutOutput({ checkout, isLoading = false, error = null, onRetry }: CheckoutOutputProps) {
+export default function CheckoutOutput({
+  checkout,
+  isLoading = false,
+  error = null,
+  onRetry,
+  bannerSrc,
+}: CheckoutOutputProps) {
   const [openCards, setOpenCards] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -318,6 +341,12 @@ export default function CheckoutOutput({ checkout, isLoading = false, error = nu
       </div>
 
       <div className="ai-output-separator" />
+
+      {bannerSrc && isLoading && <CheckoutBannerSkeleton />}
+
+      {bannerSrc && !isLoading && !error && checkout && (
+        <CheckoutBanner key={bannerSrc} src={bannerSrc} />
+      )}
 
       {/* Three mutually exclusive body states */}
 

@@ -9,13 +9,19 @@
   • ProjectDeck         — rotating stacked deck below the hero
 */
 
-import { useState, useEffect, useRef }  from 'react';
+import { useState, useEffect, useLayoutEffect, useRef }  from 'react';
 import CursorCanvas        from './CursorCanvas';
 import DraggableStickyCard from './DraggableStickyCard';
 import PhotoCard           from './PhotoCard';
 import TitleSection        from './TitleSection';
 import ProjectDeck         from './ProjectDeck';
+import DeskSection         from './DeskSection';
+import SiteFooter          from './SiteFooter';
 import AiNav               from '../ai-project/components/AiNav';
+
+const INTRO_STORAGE_KEY = 'homeIntroPlayed';
+
+type IntroPhase = 'pending' | 'loading' | 'ready' | 'skip';
 
 interface FloatPos {
   photo:  React.CSSProperties;
@@ -34,18 +40,47 @@ export default function HomePage() {
   */
   const [floatPos, setFloatPos] = useState<FloatPos | null>(null);
 
+  const [introPhase, setIntroPhase] = useState<IntroPhase>(() => {
+    if (typeof window === 'undefined') return 'pending';
+    return sessionStorage.getItem(INTRO_STORAGE_KEY) === '1' ? 'skip' : 'loading';
+  });
+  const [seedFlywheel, setSeedFlywheel] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem(INTRO_STORAGE_KEY) !== '1';
+  });
+
+  useLayoutEffect(() => {
+    if (sessionStorage.getItem(INTRO_STORAGE_KEY) === '1') return;
+
+    document.body.classList.add('home-intro-active', 'page--intro-loading');
+
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setIntroPhase('ready');
+        document.body.classList.remove('page--intro-loading');
+        document.body.classList.add('page--intro-ready');
+        sessionStorage.setItem(INTRO_STORAGE_KEY, '1');
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      document.body.classList.remove(
+        'home-intro-active',
+        'page--intro-loading',
+        'page--intro-ready',
+      );
+    };
+  }, []);
+
   useEffect(() => {
     const vw     = window.innerWidth;
     const mobile = vw < 640;
     const rand   = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 
     if (mobile) {
-      /*
-        Mobile: elements placed in the BOTTOM HALF of the hero section.
-        Use right-percentage so we stay away from both edges.
-        right: 5–18% keeps elements fully on-screen with safe padding.
-        Vertical: top 52–75% (bottom half, not too close to bottom).
-      */
       const photoTop  = rand(52, 68);
       const stickyTop = Math.min(76, photoTop + 12 + rand(0, 10));
 
@@ -62,17 +97,8 @@ export default function HomePage() {
         },
       });
     } else {
-      /*
-        Desktop: elements always on the RIGHT side of the hero.
-        x-position guaranteed > 53% of viewport width by computing
-        left in px rather than right in % (avoids element-width math ambiguity).
-
-        photoW ~200px (PNG card), stickyW ~184px (11.5rem at 16px base).
-        padPx = 8% of vw (min 48px) keeps elements from the right edge.
-        leftMin = 53% of vw guarantees both elements are past the midpoint.
-      */
       const photoW   = 200;
-      const stickyW  = 200;   // generous; actual ~184px
+      const stickyW  = 200;
       const padPx    = Math.max(48, vw * 0.08);
       const leftMin  = vw * 0.53;
 
@@ -97,58 +123,70 @@ export default function HomePage() {
     }
   }, []);
 
-  /* Ref forwarded to ProjectDeck's sticky shell so CursorCanvas can
-     clip its shadow to the background grid only */
   const deckRef = useRef<HTMLDivElement>(null);
 
+  const introReveal = introPhase === 'loading' || introPhase === 'ready';
+  const pageClass   = [
+    'page',
+    introPhase === 'loading' && 'page--intro-loading',
+    introPhase === 'ready'   && 'page--intro-ready',
+  ].filter(Boolean).join(' ');
+
   return (
-    <main className="page">
+    <main className={pageClass}>
       <AiNav current="home" />
       <CursorCanvas excludeRef={deckRef} />
 
       <section className="hero">
 
-        {/* ── Photo card — random right-side position ───────────────── */}
-        <PhotoCard
-          src="/images/riu_selfie.png"
-          alt="Riu"
-          rotation={3}
-          style={floatPos?.photo ?? { top: '2.5rem', right: '16rem' }}
-        />
-
-        {/* ── Sticky: Todo — random right-side position ─────────────── */}
-        <DraggableStickyCard
-          baseRot={2}
-          peelRot={3.5}
-          style={floatPos?.sticky
-            ? { ...floatPos.sticky, transform: 'rotate(2deg)' }
-            : { top: '5rem', right: '4.5rem', transform: 'rotate(2deg)' }
-          }
+        <div
+          className="home-intro-float home-intro-float--photo"
+          style={floatPos?.photo ?? { position: 'absolute', top: '2.5rem', right: '16rem' }}
         >
-          <div className="sticky-card__title">riu&apos;s to do:</div>
-          <div className="sticky-card__item">
-            <span className="sticky-card__checkbox">✓</span>
-            <span>graduate</span>
-          </div>
-          <div className="sticky-card__item">
-            <span className="sticky-card__checkbox"></span>
-            <span>make a portfolio</span>
-          </div>
-          <div className="sticky-card__item">
-            <span className="sticky-card__checkbox"></span>
-            <span>learn web dev</span>
-          </div>
-          <hr className="sticky-card__divider" />
-          <div className="sticky-card__status">👀 open to work</div>
-        </DraggableStickyCard>
+          <PhotoCard
+            src="/images/riu_selfie.png"
+            alt="Riu"
+            rotation={3}
+            style={{ position: 'relative', top: 'auto', right: 'auto', left: 'auto', bottom: 'auto' }}
+          />
+        </div>
 
-        {/* ── Hero bottom: hello + font-cycling title + tagline ─────── */}
-        <TitleSection />
+        <div
+          className="home-intro-float home-intro-float--sticky"
+          style={floatPos?.sticky ?? { position: 'absolute', top: '5rem', right: '4.5rem' }}
+        >
+          <DraggableStickyCard
+            baseRot={2}
+            peelRot={3.5}
+            style={{ position: 'relative', top: 'auto', right: 'auto', left: 'auto', transform: 'rotate(2deg)' }}
+          >
+            <div className="sticky-card__title">riu&apos;s to do:</div>
+            <div className="sticky-card__item">
+              <span className="sticky-card__checkbox">✓</span>
+              <span>graduate</span>
+            </div>
+            <div className="sticky-card__item">
+              <span className="sticky-card__checkbox"></span>
+              <span>make a portfolio</span>
+            </div>
+            <div className="sticky-card__item">
+              <span className="sticky-card__checkbox"></span>
+              <span>learn web dev</span>
+            </div>
+            <hr className="sticky-card__divider" />
+            <div className="sticky-card__status">👀 open to work</div>
+          </DraggableStickyCard>
+        </div>
+
+        <TitleSection seedFlywheelOnMount={seedFlywheel} />
 
       </section>
 
-      {/* ── Project deck — directly below the hero ────────────────── */}
-      <ProjectDeck ref={deckRef} />
+      <ProjectDeck ref={deckRef} introReveal={introReveal} />
+
+      <DeskSection />
+
+      <SiteFooter variant="dark" />
 
     </main>
   );

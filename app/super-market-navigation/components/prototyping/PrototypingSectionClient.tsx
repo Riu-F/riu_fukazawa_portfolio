@@ -2,7 +2,8 @@
 
 import { PublicFolderLightboxGalleryClient } from '@/app/components/gallery/PublicFolderLightboxGalleryClient';
 import type { PublicFolderGalleryImage } from '@/lib/publicFolderGallery';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStepperAutoCycle } from '@/app/hooks/useStepperAutoCycle';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
 import { InsightTag, type CaseStudyInsight } from '../InsightTag';
 
@@ -85,14 +86,14 @@ const DIGITAL_STEPS: { id: DigitalStepId; label: string; description: string }[]
 ];
 
 function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBundle }) {
-  const [stepIndex, setStepIndex] = useState(0);
   const [prevStepIndex, setPrevStepIndex] = useState<number | null>(null);
-  const [paused, setPaused] = useState(false);
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastInteractionAtRef = useRef<number>(0);
+
+  const { sectionRef, activeIndex: stepIndex, selectStep: lockStep, sectionHoverProps } =
+    useStepperAutoCycle({
+      stepCount: DIGITAL_STEPS.length,
+      intervalMs: 2500,
+    });
 
   const stepCount = DIGITAL_STEPS.length;
   const activePct = stepCount <= 1 ? 0 : (stepIndex / (stepCount - 1)) * 100;
@@ -106,54 +107,12 @@ function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBun
 
   const panelStyle = useMemo(() => ({ ['--proto-line-pct' as string]: `${activePct}%` }), [activePct]);
 
-  const clearIntervalTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
-  const clearResumeTimeout = () => {
-    if (resumeTimeoutRef.current) {
-      clearTimeout(resumeTimeoutRef.current);
-      resumeTimeoutRef.current = null;
-    }
-  };
-
   const clearPauseTimeout = () => {
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
     }
   };
-
-  const scheduleResume = (ms: number) => {
-    clearResumeTimeout();
-    resumeTimeoutRef.current = setTimeout(() => {
-      setPaused(false);
-    }, ms);
-  };
-
-  const pauseNow = () => {
-    lastInteractionAtRef.current = Date.now();
-    clearResumeTimeout();
-    setPaused(true);
-  };
-
-  useEffect(() => {
-    if (paused) {
-      clearIntervalTimer();
-      return;
-    }
-
-    clearIntervalTimer();
-    intervalRef.current = setInterval(() => {
-      setStepIndex((i) => (i + 1) % DIGITAL_STEPS.length);
-    }, 2500);
-
-    return clearIntervalTimer;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused]);
 
   useEffect(() => {
     if (prevStepIndex === null) return;
@@ -165,22 +124,15 @@ function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBun
 
   const setActiveStep = (nextIndex: number) => {
     setPrevStepIndex(stepIndex);
-    setStepIndex(nextIndex);
-    pauseNow();
-    scheduleResume(5000);
-  };
-
-  const onPanelMouseEnter = () => {
-    pauseNow();
-  };
-
-  const onPanelMouseLeave = () => {
-    // Desktop hover: resume after a short delay so it doesn't jump immediately.
-    scheduleResume(2000);
+    lockStep(nextIndex);
   };
 
   return (
-    <div className="proto-digital">
+    <div
+      ref={sectionRef as RefObject<HTMLDivElement>}
+      className="proto-digital"
+      {...sectionHoverProps}
+    >
       <nav
         className="proto-digital__stepper"
         role="tablist"
@@ -193,7 +145,6 @@ function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBun
           </div>
           <div className="proto-digital__nodes">
           {DIGITAL_STEPS.map((s, i) => (
-            // state: completed (past), active, upcoming
             <button
               key={s.id}
               type="button"
@@ -204,7 +155,6 @@ function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBun
                 i < stepIndex ? ' is-complete' : i === stepIndex ? ' is-active' : ' is-upcoming'
               }`}
               onClick={() => setActiveStep(i)}
-              onMouseEnter={() => pauseNow()}
             >
               <span className="proto-digital__dot" aria-hidden="true" />
               <span className="proto-digital__label">{s.label}</span>
@@ -218,12 +168,6 @@ function DigitalProcessStepper({ galleries }: { galleries: PrototypingGalleryBun
         className="proto-digital__panel"
         role="tabpanel"
         aria-labelledby={`proto-digital-tab-${step.id}`}
-        onMouseEnter={onPanelMouseEnter}
-        onMouseLeave={onPanelMouseLeave}
-        onPointerDown={() => {
-          pauseNow();
-          scheduleResume(5000);
-        }}
       >
         <div className="proto-digital__panel-stack">
           {prevStep ? (

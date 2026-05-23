@@ -21,6 +21,11 @@ type CyclingWordmarkProps = {
    * viewport width (prevents horizontal scroll on mobile footers, etc.).
    */
   clampFontToViewport?: boolean;
+  /**
+   * Homepage load-in only: seed desktop flywheel velocity (or a short
+   * accelerated mobile font burst) so fonts cycle fast then decelerate.
+   */
+  seedFlywheelOnMount?: boolean;
 };
 
 /**
@@ -34,6 +39,7 @@ export default function CyclingWordmark({
   targetVh = TARGET_VH,
   onIndexChange,
   clampFontToViewport = false,
+  seedFlywheelOnMount = false,
 }: CyclingWordmarkProps) {
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -91,6 +97,7 @@ export default function CyclingWordmark({
   const lastRAFTimeRef = useRef(0);
   const lastScrollYRef = useRef(0);
   const rafIdRef = useRef<number>(0);
+  const flywheelSeededRef = useRef(false);
 
   const switchFont = useCallback(() => {
     fontIdxRef.current = (fontIdxRef.current + 1) % FONTS.length;
@@ -139,8 +146,32 @@ export default function CyclingWordmark({
 
   useEffect(() => {
     if (isMobile) {
+      if (seedFlywheelOnMount) {
+        let delay = 70;
+        let ticks = 0;
+        let burstId = 0;
+        const burst = () => {
+          switchFont();
+          ticks++;
+          if (ticks < 18) {
+            delay = Math.min(480, delay + 24);
+            burstId = window.setTimeout(burst, delay);
+          }
+        };
+        burst();
+        const steadyId = window.setInterval(switchFont, 500);
+        return () => {
+          clearTimeout(burstId);
+          clearInterval(steadyId);
+        };
+      }
       const id = setInterval(switchFont, 500);
       return () => clearInterval(id);
+    }
+
+    if (seedFlywheelOnMount && !flywheelSeededRef.current) {
+      velocityRef.current = 18;
+      flywheelSeededRef.current = true;
     }
 
     function flywheelTick(now: number) {
@@ -182,7 +213,7 @@ export default function CyclingWordmark({
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('scroll', onScroll);
     };
-  }, [isMobile, switchFont]);
+  }, [isMobile, switchFont, seedFlywheelOnMount]);
 
   return (
     <div className={`title ${className}`.trim()} ref={wordmarkRef}>

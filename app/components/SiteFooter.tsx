@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import CyclingWordmark from './CyclingWordmark';
 
-export default function SiteFooter() {
+type SiteFooterProps = {
+  /** `purple` — supermarket case study; `dark` — home page grid footer */
+  variant?: 'purple' | 'dark';
+};
+
+export default function SiteFooter({ variant = 'purple' }: SiteFooterProps) {
   const [narrow, setNarrow] = useState(false);
 
   useEffect(() => {
@@ -13,8 +18,11 @@ export default function SiteFooter() {
     return () => window.removeEventListener('resize', q);
   }, []);
 
+  const footerClass =
+    variant === 'dark' ? 'site-footer site-footer--dark' : 'site-footer';
+
   return (
-    <footer className="site-footer" aria-label="Footer">
+    <footer className={footerClass} aria-label="Footer">
       <div className="site-footer__container">
         <div className="site-footer__name" aria-label="Riu (cycling wordmark)">
           <CyclingWordmark

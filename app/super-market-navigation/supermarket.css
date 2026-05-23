@@ -2631,7 +2631,8 @@
 }
 
 .aip.smp .proto-digital__panel {
-  position: relative;
+  position:   relative;
+  min-height: 520px;
 }
 
 .aip.smp .proto-digital__panel-stack {

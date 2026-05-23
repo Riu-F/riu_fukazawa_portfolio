@@ -13,12 +13,14 @@ export type PublicFolderLightboxGalleryClientProps = {
   groupAriaLabel: string;
   /** e.g. "Affinity diagram photo" */
   lightboxAriaLabel?: string;
+  layout?: 'grid' | 'horizontal';
 };
 
 export function PublicFolderLightboxGalleryClient({
   images,
   groupAriaLabel,
   lightboxAriaLabel = 'Gallery image',
+  layout = 'grid',
 }: PublicFolderLightboxGalleryClientProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -69,7 +71,11 @@ export function PublicFolderLightboxGalleryClient({
 
   return (
     <>
-      <div className="pflg-gallery" role="group" aria-label={groupAriaLabel}>
+      <div
+        className={`pflg-gallery${layout === 'horizontal' ? ' pflg-gallery--horizontal' : ''}`}
+        role="group"
+        aria-label={groupAriaLabel}
+      >
         {images.map((item, index) => (
           <button
             key={item.src}

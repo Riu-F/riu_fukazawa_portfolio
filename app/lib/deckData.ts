@@ -10,6 +10,13 @@
 
 export type DeckTag = 'navigation' | 'distraction' | 'communication';
 
+export {
+  AI_CHECKOUT_PERSONAS,
+  AI_CHECKOUT_DEFAULT_INDEX,
+  type AiCheckoutPersonaState,
+  type AiCheckoutRecCard,
+} from './aiCheckoutDeckData';
+
 export interface DeckCard {
   id:      number;
   tab:     string;  /* tab label */

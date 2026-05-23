@@ -17,55 +17,22 @@
 */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  AI_CHECKOUT_PERSONAS,
+  AI_CHECKOUT_DEFAULT_INDEX,
+} from '../lib/aiCheckoutDeckData';
 
 /* ── Timing ─────────────────────────────────────────────────────── */
-const CYCLE     = 2800;
-const HOVER_DLY = 1800;
-const CLICK_DLY = 2500;
-const KB_DLY    = 4000;
+const CYCLE_MS           = 3000;
+const HOVER_DLY          = 1800;
+const CLICK_DLY          = 2500;
+const KB_DLY             = 4000;
+const PERSONA_FADE_MS    = 200;
+const BUILD_COMPLETE_MS  = 1290; /* after last rec card stagger (1050 + 2×80) */
+const PARTICLE_COUNT     = 6;
+const MOBILE_MAX_PX      = 640;
 
-/* ── Data ───────────────────────────────────────────────────────── */
-const PERSONAS = [
-  { name: 'Solo Explorer',    traits: 'Flexible · Adventure-led' },
-  { name: 'Budget Traveller', traits: 'Cost-conscious · Efficient' },
-  { name: 'Luxury Couple',    traits: 'Comfort · Premium' },
-] as const;
-
-interface RecCard { label: string; desc: string; tag: string; icon: string }
-interface State   { heading: string; sub: string; travellers: string; cards: RecCard[] }
-
-const STATES: State[] = [
-  {
-    heading:    'Your booking is confirmed',
-    sub:        "Here's everything you need to start exploring Tokyo.",
-    travellers: '1 Guest',
-    cards: [
-      { label: 'Explore Nearby',     desc: 'Hidden gems and local favourites within walking distance.', tag: 'Discovery', icon: 'map'   },
-      { label: 'Flexible Transport', desc: 'IC cards, day passes, and routes that adapt to your plans.', tag: 'Flexible',  icon: 'train' },
-      { label: 'Local Picks',        desc: "Curated by locals — street food, temples, nightlife.",       tag: 'Adventure', icon: 'bell'  },
-    ],
-  },
-  {
-    heading:    'Purchase complete',
-    sub:        "We've prioritised the most useful next steps to help you save.",
-    travellers: '1 Guest',
-    cards: [
-      { label: 'Best Value Transport',    desc: 'Cheapest Narita transfer: bus, train, shuttle compared.',  tag: 'Save ¥2,400', icon: 'coins' },
-      { label: 'Cheap Eats Nearby',       desc: 'Top-rated budget spots and konbini guides near your hotel.', tag: 'Under ¥800', icon: 'food'  },
-      { label: 'Budget-Friendly Add-ons', desc: 'Free tours, discount museum passes, and low-cost day trips.', tag: 'Best value', icon: 'heart' },
-    ],
-  },
-  {
-    heading:    "You're all set",
-    sub:        'Your post-booking experience has been tailored for comfort and ease.',
-    travellers: '2 Guests',
-    cards: [
-      { label: 'Private Transfer',     desc: 'Luxury sedan from Haneda to your hotel. Driver confirmed.',  tag: 'Premium',   icon: 'car'  },
-      { label: 'Premium Stay Details', desc: 'Suite upgrades, spa reservations, and late checkout.',       tag: 'Top-rated', icon: 'home' },
-      { label: 'Curated Experiences',  desc: 'Private tea ceremonies, Michelin dining, exclusive access.', tag: 'Reserved',  icon: 'star' },
-    ],
-  },
-];
+const PERSONAS = AI_CHECKOUT_PERSONAS;
 
 /* ── SVG helpers ─────────────────────────────────────────────────── */
 function Svg({ children, size = 16, stroke = 'currentColor' }: {
@@ -122,43 +89,63 @@ interface Props {
 }
 
 export default function AICheckoutDemo({ show, hideHeader }: Props) {
-  const [active, setActive]           = useState(0);
-  const [nodePulsing, setNodePulsing] = useState(false);
-  const [upperKey, setUpperKey]       = useState(0);
-  const [lowerKey, setLowerKey]       = useState(0);
+  const [active, setActive]             = useState(AI_CHECKOUT_DEFAULT_INDEX);
+  const [contentVisible, setContentVisible] = useState(true);
+  const [engineScalePulse, setEngineScalePulse] = useState(false);
+  const [buildActive, setBuildActive]   = useState(false);
+  const [cyclingEnabled, setCyclingEnabled] = useState(false);
+  const [isMobile, setIsMobile]         = useState(false);
+  const [upperKey, setUpperKey]         = useState(0);
+  const [lowerKey, setLowerKey]         = useState(0);
 
   /* Refs for imperative loop logic (avoid stale closures) */
-  const activeRef   = useRef(0);
-  const interacting = useRef(false);
-  const inViewRef   = useRef(false);
-  const loopRef     = useRef<ReturnType<typeof setInterval>  | null>(null);
-  const resumeRef   = useRef<ReturnType<typeof setTimeout>   | null>(null);
-  const pulseRef    = useRef<ReturnType<typeof setTimeout>   | null>(null);
-  const lowerRef    = useRef<ReturnType<typeof setTimeout>   | null>(null);
-  const rootRef     = useRef<HTMLDivElement>(null);
-  const rowRef      = useRef<HTMLDivElement>(null);
-  const rmRef       = useRef(false);
+  const activeRef       = useRef(AI_CHECKOUT_DEFAULT_INDEX);
+  const interacting     = useRef(false);
+  const inViewRef       = useRef(false);
+  const cyclingEnabledRef = useRef(false);
+  const loopRef         = useRef<ReturnType<typeof setInterval>  | null>(null);
+  const resumeRef       = useRef<ReturnType<typeof setTimeout>   | null>(null);
+  const fadeRef         = useRef<ReturnType<typeof setTimeout>   | null>(null);
+  const scalePulseRef   = useRef<ReturnType<typeof setTimeout>   | null>(null);
+  const lowerRef        = useRef<ReturnType<typeof setTimeout>   | null>(null);
+  const rootRef         = useRef<HTMLDivElement>(null);
+  const rowRef          = useRef<HTMLDivElement>(null);
+  const rmRef           = useRef(false);
 
   useEffect(() => {
     rmRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const check = () => setIsMobile(window.innerWidth < MOBILE_MAX_PX);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  /* ── Core activate ───────────────────────────────────────────── */
-  const activate = useCallback((idx: number) => {
-    if (idx === activeRef.current) return;
+  const applyPersonaIndex = useCallback((idx: number) => {
     activeRef.current = idx;
     setActive(idx);
     if (rmRef.current) return;
-    /* Upper connector pulse */
-    setUpperKey(k => k + 1);
-    /* Node pulse */
-    setNodePulsing(true);
-    if (pulseRef.current) clearTimeout(pulseRef.current);
-    pulseRef.current = setTimeout(() => setNodePulsing(false), 900);
-    /* Lower connector pulse — staggered 200ms */
+    setUpperKey((k) => k + 1);
+    setEngineScalePulse(true);
+    if (scalePulseRef.current) clearTimeout(scalePulseRef.current);
+    scalePulseRef.current = setTimeout(() => setEngineScalePulse(false), 300);
     if (lowerRef.current) clearTimeout(lowerRef.current);
-    lowerRef.current = setTimeout(() => setLowerKey(k => k + 1), 200);
+    lowerRef.current = setTimeout(() => setLowerKey((k) => k + 1), 200);
   }, []);
+
+  /* ── Core activate — 200ms content crossfade ─────────────────── */
+  const activate = useCallback((idx: number) => {
+    if (idx === activeRef.current) return;
+    if (rmRef.current) {
+      applyPersonaIndex(idx);
+      return;
+    }
+    setContentVisible(false);
+    if (fadeRef.current) clearTimeout(fadeRef.current);
+    fadeRef.current = setTimeout(() => {
+      applyPersonaIndex(idx);
+      setContentVisible(true);
+    }, PERSONA_FADE_MS);
+  }, [applyPersonaIndex]);
 
   /* ── Loop ────────────────────────────────────────────────────── */
   const stopLoop = useCallback(() => {
@@ -167,11 +154,17 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
 
   const startLoop = useCallback(() => {
     stopLoop();
-    if (rmRef.current || interacting.current || !inViewRef.current) return;
+    if (
+      rmRef.current
+      || interacting.current
+      || !inViewRef.current
+      || !cyclingEnabledRef.current
+      || isMobile
+    ) return;
     loopRef.current = setInterval(() => {
-      activate((activeRef.current + 1) % 3);
-    }, CYCLE);
-  }, [stopLoop, activate]);
+      activate((activeRef.current + 1) % PERSONAS.length);
+    }, CYCLE_MS);
+  }, [stopLoop, activate, isMobile]);
 
   const scheduleResume = useCallback((delay: number) => {
     if (resumeRef.current) clearTimeout(resumeRef.current);
@@ -197,19 +190,46 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
     return () => io.disconnect();
   }, [show, startLoop, stopLoop]);
 
-  /* ── Start/stop loop when card becomes front ─────────────────── */
+  /* ── Build sequence + cycling gate (tied to ProjectDeck `show`) ── */
   useEffect(() => {
-    if (show && inViewRef.current) startLoop();
-    if (!show) stopLoop();
-  }, [show, startLoop, stopLoop]);
+    cyclingEnabledRef.current = false;
+    setCyclingEnabled(false);
+
+    if (!show) {
+      setBuildActive(false);
+      setContentVisible(true);
+      stopLoop();
+      if (fadeRef.current) clearTimeout(fadeRef.current);
+      activeRef.current = AI_CHECKOUT_DEFAULT_INDEX;
+      setActive(AI_CHECKOUT_DEFAULT_INDEX);
+      return undefined;
+    }
+
+    setBuildActive(true);
+
+    const buildDone = setTimeout(() => {
+      cyclingEnabledRef.current = true;
+      setCyclingEnabled(true);
+      if (inViewRef.current && !interacting.current) startLoop();
+    }, BUILD_COMPLETE_MS);
+
+    return () => clearTimeout(buildDone);
+  }, [show, stopLoop, startLoop]);
+
+  /* ── Start/stop loop when card is front + cycling enabled ────── */
+  useEffect(() => {
+    if (show && cyclingEnabled && inViewRef.current) startLoop();
+    if (!show || !cyclingEnabled) stopLoop();
+  }, [show, cyclingEnabled, startLoop, stopLoop]);
 
   /* ── Cleanup ─────────────────────────────────────────────────── */
   useEffect(() => {
     return () => {
       stopLoop();
       if (resumeRef.current) clearTimeout(resumeRef.current);
-      if (pulseRef.current)  clearTimeout(pulseRef.current);
-      if (lowerRef.current)  clearTimeout(lowerRef.current);
+      if (fadeRef.current) clearTimeout(fadeRef.current);
+      if (scalePulseRef.current) clearTimeout(scalePulseRef.current);
+      if (lowerRef.current) clearTimeout(lowerRef.current);
     };
   }, [stopLoop]);
 
@@ -399,78 +419,82 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
           })}
         </div>
 
-        {/* ── Upper connector ──────────────────────────────────── */}
-        <div style={{ height: 24, display: 'flex', alignItems: 'stretch', flexShrink: 0 }}>
-          <div style={{ width: 1, background: '#d8d8d8', position: 'relative' }}>
-            {upperKey > 0 && (
-              <>
-                {/* Line flash — the whole connector briefly glows rainbow */}
-                <div key={`uflash${upperKey}`} className="ai-connector-flash" />
-                {/* Pulse dot — travels down the line */}
-                <div key={`u${upperKey}`} className="ai-connector-pulse" />
-              </>
+        {/* ── Connector column + particles (desktop, split above/below engine) ── */}
+        <div className="ai-mid-pipeline">
+          <div className="ai-connector-segment ai-connector-segment--upper">
+            {show && !isMobile && (
+              <div className="ai-particle-lane ai-particle-lane--upper" aria-hidden="true">
+                {Array.from({ length: PARTICLE_COUNT }, (_, i) => (
+                  <span
+                    key={`u${i}`}
+                    className="ai-particle-dot"
+                    style={{ animationDelay: `${(i / PARTICLE_COUNT) * 2}s` }}
+                  />
+                ))}
+              </div>
             )}
+            <div className="ai-connector-line">
+              {upperKey > 0 && (
+                <>
+                  <div key={`uflash${upperKey}`} className="ai-connector-flash" />
+                  <div key={`u${upperKey}`} className="ai-connector-pulse" />
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* ── AI node ─ rainbow border wrapper ────────────────── */}
-        <div
-          className="ai-engine-wrapper"
-          style={{
-            /* Soft rainbow-tinted spread on pulse; fades via transition */
-            boxShadow:  nodePulsing
-              ? '0 0 14px 4px rgba(180,160,240,0.18), 0 0 14px 4px rgba(130,200,220,0.13)'
-              : '0 0 0 0 transparent',
-            transition: 'box-shadow 450ms ease-out',
-          }}
-        >
-          <div style={{
-            width:          178,
-            height:         36,
-            borderRadius:   18,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            gap:            7,
-            background:     '#fff',
-          }}>
-            {/* Dot — always rainbow (tiny prismatic accent) */}
+          <div
+            className={`ai-engine-wrapper${engineScalePulse ? ' ai-engine-scale-pulse' : ''}`}
+          >
             <div style={{
-              width:           6,
-              height:          6,
-              borderRadius:    '50%',
-              background:      'var(--ai-rainbow)',
-              backgroundSize:  '200% 200%',
-              flexShrink:      0,
-            }} />
-            <span style={{
-              fontFamily:    "'DM Mono', monospace",
-              fontSize:      9.5,
-              fontWeight:    500,
-              letterSpacing: '0.7px',
-              textTransform: 'uppercase',
-              color:         nodePulsing ? '#888' : '#aaa',
-              transition:    'color 450ms ease-out',
+              width:          178,
+              height:         36,
+              borderRadius:   18,
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              gap:            7,
+              background:     '#fff',
             }}>
-              AI Engine
-            </span>
+              <div style={{
+                width:           6,
+                height:          6,
+                borderRadius:    '50%',
+                background:      'var(--ai-rainbow)',
+                backgroundSize:  '200% 200%',
+                flexShrink:      0,
+              }} />
+              <span className="ai-engine-label">AI Engine</span>
+            </div>
           </div>
-        </div>
 
-        {/* ── Lower connector ──────────────────────────────────── */}
-        <div style={{ height: 24, display: 'flex', alignItems: 'stretch', flexShrink: 0 }}>
-          <div style={{ width: 1, background: '#d8d8d8', position: 'relative' }}>
-            {lowerKey > 0 && (
-              <>
-                <div key={`lflash${lowerKey}`} className="ai-connector-flash" />
-                <div key={`l${lowerKey}`} className="ai-connector-pulse" />
-              </>
+          <div className="ai-connector-segment ai-connector-segment--lower">
+            {show && !isMobile && (
+              <div className="ai-particle-lane ai-particle-lane--lower" aria-hidden="true">
+                {Array.from({ length: PARTICLE_COUNT }, (_, i) => (
+                  <span
+                    key={`l${i}`}
+                    className="ai-particle-dot"
+                    style={{ animationDelay: `${(i / PARTICLE_COUNT) * 2 + 1}s` }}
+                  />
+                ))}
+              </div>
             )}
+            <div className="ai-connector-line">
+              {lowerKey > 0 && (
+                <>
+                  <div key={`lflash${lowerKey}`} className="ai-connector-flash" />
+                  <div key={`l${lowerKey}`} className="ai-connector-pulse" />
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Output frame ─────────────────────────────────────── */}
-        <div style={{
+        {/* ── Output frame — progressive build ─────────────────── */}
+        <div
+          className={`deck-ai-browser${buildActive ? ' deck-ai-build-active' : ''}`}
+          style={{
           width:        '100%',
           maxWidth:     840,
           flex:         1,
@@ -482,10 +506,13 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
           boxShadow:    '0 2px 20px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.03)',
           overflow:     'hidden',
           background:   '#fff',
-        }}>
+        }}
+        >
 
           {/* Browser toolbar */}
-          <div style={{
+          <div
+            className="deck-ai-build-chrome"
+            style={{
             height:        32,
             flexShrink:    0,
             background:    '#f5f5f5',
@@ -494,7 +521,8 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
             alignItems:    'center',
             padding:       '0 14px',
             gap:           5,
-          }}>
+          }}
+          >
             {[0,1,2].map(d => (
               <span key={d} style={{ width: 8, height: 8, borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
             ))}
@@ -518,25 +546,26 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
             </div>
           </div>
 
-          {/* Rainbow separator — a 2px prism line between toolbar and content */}
           <div className="ai-output-separator" />
 
-          {/* Output body — fixed height, states overlap via absolute */}
           <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            {STATES.map((s, i) => (
+            {(() => {
+              const s = PERSONAS[active];
+              return (
               <div
-                key={i}
                 role="tabpanel"
-                className={`ai-output-state${active === i ? ' active' : ''}`}
+                className={`ai-output-state active ai-deck-output${contentVisible ? '' : ' ai-deck-output--fading'}`}
               >
-                {/* Success area */}
-                <div style={{
+                <div
+                  className="deck-ai-build-success"
+                  style={{
                   textAlign:    'center',
                   marginBottom: 12,
                   paddingBottom: 12,
                   borderBottom: '1px solid #f0f0f0',
                   flexShrink:   0,
-                }}>
+                }}
+                >
                   <div style={{
                     width:          34,
                     height:         34,
@@ -571,8 +600,9 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   </p>
                 </div>
 
-                {/* Trip strip */}
-                <div style={{
+                <div
+                  className="deck-ai-build-trip"
+                  style={{
                   display:        'flex',
                   justifyContent: 'center',
                   gap:            24,
@@ -581,7 +611,8 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   borderRadius:   8,
                   marginBottom:   12,
                   flexShrink:     0,
-                }}>
+                }}
+                >
                   {[
                     { label: 'Destination', value: 'Tokyo, Japan' },
                     { label: 'Dates',       value: '14–21 Mar' },
@@ -611,8 +642,9 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   ))}
                 </div>
 
-                {/* Next steps label */}
-                <div style={{
+                <div
+                  className="deck-ai-build-steps-label"
+                  style={{
                   fontFamily:    "'DM Mono', monospace",
                   fontSize:      10,
                   fontWeight:    500,
@@ -621,13 +653,13 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   color:         '#aaa',
                   marginBottom:  9,
                   flexShrink:    0,
-                }}>
+                }}
+                >
                   Recommended next steps
                 </div>
 
-                {/* Rec cards */}
                 <div
-                  className="ai-rec-grid"
+                  className="ai-rec-grid deck-ai-build-rec-grid"
                   style={{
                     display:             'grid',
                     gridTemplateColumns: 'repeat(3, 1fr)',
@@ -638,7 +670,7 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   {s.cards.map((card, ci) => (
                     <div
                       key={ci}
-                      className="ai-rec-card"
+                      className={`ai-rec-card deck-ai-build-rec-card deck-ai-build-rec-card--${ci + 1}`}
                       style={{
                         background:   '#f7f7f7',
                         borderRadius: 9,
@@ -698,9 +730,11 @@ export default function AICheckoutDemo({ show, hideHeader }: Props) {
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })()}
           </div>
         </div>
+
 
       </div>
     </div>

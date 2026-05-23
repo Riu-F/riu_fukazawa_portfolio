@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { AiInsightTag } from './AiInsightTag';
 
 function useScrollProgress(ref: React.RefObject<HTMLElement | null>) {
   const [progress, setProgress] = useState(0);
@@ -21,6 +22,21 @@ function useScrollProgress(ref: React.RefObject<HTMLElement | null>) {
   return progress;
 }
 
+function StepTitle({
+  tag,
+  title,
+}: {
+  tag: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="aip-how__step-head">
+      {tag}
+      <div className="h5">{title}</div>
+    </div>
+  );
+}
+
 export default function AiHowItWorks() {
   const contentRef = useRef<HTMLDivElement>(null);
   const progress   = useScrollProgress(contentRef as React.RefObject<HTMLElement | null>);
@@ -29,7 +45,7 @@ export default function AiHowItWorks() {
     <div className="default-section">
       <div className="default-container w-container">
         <div className="timeline-heading-div">
-          <h2 className="h2">how does it work?</h2>
+          <h2 className="h2">how the system works</h2>
         </div>
 
         {/* Title row — hidden on mobile via .timeline10-top-labels-row */}
@@ -57,12 +73,16 @@ export default function AiHowItWorks() {
             <div className="timeline10_row">
               <div className="timeline10_item">
                 <div className="big-number">01</div>
-                <div className="h5">Gathering Known Data</div>
+                <StepTitle
+                  tag={<AiInsightTag principle="activate-data" />}
+                  title="Known Data"
+                />
                 <p className="paragraph-new">
-                  The program begins by combining any existing user information—such as travel
-                  preferences, past destinations and experiences, and demographic details such as
-                  occupation, age and gender — with real-time data about the searched destination,
-                  including weather, hotels, activities, customs requirements and cultural factors.
+                  The system starts with what the travel platform already knows about you. Your
+                  destination, dates, where you&rsquo;re flying from, group type, experience level,
+                  interests, and budget. In a real platform, this data comes from the booking flow
+                  and customer profile automatically. In the demo on this page, the form makes that
+                  data visible so you can test how different inputs change the output.
                 </p>
               </div>
               <div className="timeline10_circle-wrapper">
@@ -74,17 +94,14 @@ export default function AiHowItWorks() {
                     <div className="ai-bubbles">[Backend]</div>
                   </div>
                 </div>
-                <div className="h5">1. Webflow: Collecting and Sending User Data</div>
+                <div className="h5">1. Next.js Form &rarr; API Route</div>
                 <p className="paragraph-new">
-                  The program begins by combining any existing user information—such as travel
-                  preferences, past destinations and experiences, and demographic details such as
-                  occupation, age and gender — with real-time data about the searched destination,
-                  including weather, hotels, activities, customs requirements and cultural factors.
-                </p>
-                <div className="h5">2. Vercel: The Middle Layer</div>
-                <p className="paragraph-new">
-                  Vercel acts as the server-side logic layer. It receives the JSON payload from
-                  Webflow and forwards it to the <strong>Wordware API</strong>.
+                  The front end collects traveller context through a structured form (11 fields:
+                  name, destination, origin, dates, length of stay, age range, purpose, experience
+                  level, budget, group type, interests). On submit, the form data is validated
+                  client-side (destination is required, all others optional) and sent as a POST
+                  request to a Next.js API route at /api/generate. An AbortController handles race
+                  conditions if the user resubmits before a previous request completes.
                 </p>
               </div>
             </div>
@@ -93,11 +110,18 @@ export default function AiHowItWorks() {
             <div className="timeline10_row">
               <div className="timeline10_item">
                 <div className="big-number">02</div>
-                <div className="h5">Persona Expansion</div>
+                <StepTitle
+                  tag={<AiInsightTag principle="invisible-ai" />}
+                  title="Persona Inference"
+                />
                 <p className="paragraph-new">
-                  Using the combined input, the system builds a more detailed travel persona. This
-                  includes generalising traits and expanding on inferred needs, like budget
-                  considerations, temporal experience, language support, climatic needs&hellip;
+                  Using the combined input, the AI builds a richer picture of who you are as a
+                  traveller. A family from Jakarta visiting Tokyo in December isn&rsquo;t just
+                  &ldquo;family, Tokyo.&rdquo; The model infers that they&rsquo;re likely first-time
+                  overseas travellers from a tropical climate heading into winter, probably needing
+                  visa guidance, cold-weather clothing advice, kid-friendly transport options, and
+                  halal food recommendations. It identifies the gaps between your background and your
+                  destination.
                 </p>
               </div>
               <div className="timeline10_circle-wrapper">
@@ -109,36 +133,18 @@ export default function AiHowItWorks() {
                     <div className="ai-bubbles">[Backend]</div>
                   </div>
                 </div>
-                <div className="h5">3. Wordware + ChatGPT: AI Personalisation Pipeline</div>
+                <div className="h5">2. Claude Haiku via Anthropic SDK</div>
                 <p className="paragraph-new">
-                  This is where the real magic happens. Wordware runs a three-step internal AI
-                  process (using ChatGPT) to generate hyper-personalised output:
+                  The API route calls Claude Haiku (claude-haiku-4-5-20251001) through the Anthropic
+                  SDK with a structured prompt. The prompt instructs the model to perform three
+                  reasoning steps in sequence: first, expand the raw traveller data into a rich
+                  persona (inferring cultural context, climate familiarity, experience gaps, and
+                  likely concerns). Second, identify what this specific traveller probably
+                  doesn&rsquo;t know about their destination. Third, generate structured content
+                  addressing those gaps. The model returns JSON matching a strict schema: a title,
+                  subtitle, trip info summary, and exactly three expandable cards, each with a
+                  heading, summary, tag, and detailed sections containing bullet points and tips.
                 </p>
-                <ul role="list" className="list-numbered paragraph-new">
-                  <li className="list-item-new">
-                    <div>
-                      <strong>Persona Building:</strong> It expands on the input data to create a
-                      rich persona. For example, if a user says they&rsquo;re from Indonesia, it
-                      infers relevant contextual traits (e.g., culturally diverse, tropical climate,
-                      language background).
-                    </div>
-                  </li>
-                  <li className="list-item-new">
-                    <div>
-                      <strong>Gap Identification:</strong> It analyses what the user might not know
-                      about the destination — identifying gaps between their background and where
-                      they&rsquo;re going. E.g., someone from Indonesia visiting Japan might need
-                      info on colder weather, cultural norms, or local etiquette.
-                    </div>
-                  </li>
-                  <li className="list-item-new">
-                    <div>
-                      <strong>Content Generation:</strong> It produces well-written, friendly
-                      content that feels human and relevant, delivered in structured JSON (headings,
-                      paragraphs, etc.).
-                    </div>
-                  </li>
-                </ul>
               </div>
             </div>
 
@@ -146,12 +152,17 @@ export default function AiHowItWorks() {
             <div className="timeline10_row">
               <div className="timeline10_item">
                 <div className="big-number">03</div>
-                <div className="h5">Personalised Checkout Page</div>
+                <StepTitle
+                  tag={<AiInsightTag principle="post-purchase" />}
+                  title="Personalised Output"
+                />
                 <p className="paragraph-new">
-                  Finally, the program generates a customised post-search checkout page. This page
-                  includes tailored recommendations for accommodations, activities, health and
-                  safety tips, required travel documents, and local transport options—curated to
-                  align with the user&rsquo;s persona and destination data.
+                  The system generates a customised confirmation page. Instead of a generic
+                  &ldquo;booking confirmed&rdquo; screen, the traveller sees a personalised header
+                  addressing them by name and trip context, a trip summary card, and three
+                  expandable recommendation cards covering the specific areas most relevant to their
+                  situation. Different travellers seeing the same UI get completely different content,
+                  tone, and priorities.
                 </p>
               </div>
               <div className="timeline10_circle-wrapper">
@@ -163,12 +174,17 @@ export default function AiHowItWorks() {
                     <div className="ai-bubbles">[Backend]</div>
                   </div>
                 </div>
-                <div className="h5">4. Back to Webflow: Displaying the Output</div>
+                <div className="h5">3. Structured JSON &rarr; React Components</div>
                 <p className="paragraph-new">
-                  The AI&rsquo;s final output is sent back to Vercel, which filters and returns the
-                  cleaned JSON. Webflow&rsquo;s JavaScript then takes that response and dynamically
-                  inserts the content into the appropriate divs on the page — no page reloads, no
-                  buttons, just seamless personalisation.
+                  The API route validates and normalises the Claude response server-side before
+                  returning it as {'{ ok: true, checkout: CheckoutData }'}. The front end receives
+                  the structured JSON and renders it through a shared CheckoutOutput component: a
+                  browser-chrome-framed card layout with a confirmation header, trip info grid, and
+                  three expandable cards. Each card uses flex-grow animation for smooth expansion.
+                  The same rendering component is used by both the preloaded hero demo (with mock
+                  data) and the live generator (with API data), ensuring visual consistency. Icon
+                  names in the response are validated against a known set and fall back to a default
+                  compass icon.
                 </p>
               </div>
             </div>
