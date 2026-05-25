@@ -307,9 +307,9 @@ const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function Projec
   if (isMobile) {
     return (
       <div ref={assignStickyShellRef} className="deck-mobile-stack">
-        {DECK_CARDS.map(card => {
+        {DECK_CARDS.filter((card) => !card.comingSoon).map(card => {
           const theme = TAB_THEMES[card.id];
-          /* Card 1 only: whole-card link. Cards 0 & 2 use inner CTAs — never nest <a>. */
+          /* Card 1 only: whole-card link. Card 0 uses inner CTA — never nest <a>. */
           const useOuterLink = card.id === 1 && Boolean(card.href);
           const Wrapper = (useOuterLink ? 'a' : 'div') as 'a' | 'div';
           const wrapperProps = useOuterLink ? { href: card.href } : {};
@@ -342,12 +342,7 @@ const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function Projec
                 {card.tab}
               </div>
 
-              {card.comingSoon ? (
-                <div className="deck-mobile-coming-soon" aria-label="Coming soon">
-                  Coming Soon
-                </div>
-              ) : (
-                <div style={{ padding: '24px 20px 28px', background: '#fff' }}>
+              <div style={{ padding: '24px 20px 28px', background: '#fff' }}>
                   <p style={{
                     fontFamily:    "'Inter', sans-serif",
                     fontSize:      '0.875rem',
@@ -399,8 +394,7 @@ const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function Projec
                       ) : null}
                     </>
                   ) : null}
-                </div>
-              )}
+              </div>
             </Wrapper>
           );
         })}
