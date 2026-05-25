@@ -203,10 +203,11 @@ function DeskObject({
   };
 
   const handleFocus = () => {
-    scheduleOpen();
+    if (!isMobile) scheduleOpen();
   };
 
   const handleBlur = (e: React.FocusEvent) => {
+    if (isMobile) return;
     const next = e.relatedTarget;
     if (next instanceof Node && zoneRef.current?.contains(next)) return;
     scheduleClose();
@@ -227,7 +228,7 @@ function DeskObject({
     position,
     onPositionChange,
     onDragStart: handleDragStartLocal,
-    enabled: true,
+    enabled: !isMobile,
     rotation: dragRotation,
     syncTransform: !isMobile,
   });
@@ -257,9 +258,6 @@ function DeskObject({
 
   const style = isMobile
     ? {
-        left:      `${position.x}%`,
-        top:       `${position.y}%`,
-        ['--desk-mobile-x' as string]: `${mobile.x}px`,
         ['--desk-mobile-rot' as string]: `${item.rotation + mobile.rotate}deg`,
       }
     : {
@@ -282,6 +280,10 @@ function DeskObject({
   const handleTriggerClick = () => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
+      return;
+    }
+    if (isMobile) {
+      if (href) navigateToProject();
       return;
     }
     if (expanded && href) {
@@ -330,7 +332,7 @@ function DeskObject({
         </span>
       </button>
 
-      {expanded && (
+      {expanded && !isMobile && (
         <div
           id={`desk-panel-${item.id}`}
           className={panelClass}

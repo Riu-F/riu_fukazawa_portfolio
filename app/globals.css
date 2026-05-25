@@ -1604,13 +1604,17 @@ body.home-intro-active.page--intro-ready::before {
 /* ── MOBILE: < 640px ─────────────────────────────────────────────── */
 @media (max-width: 40rem) {
 
-  /* Hero: exactly one viewport tall, content from the top.
-     ~10vh top padding clears the fixed mobile menu button so intro text
-     does not sit under the nav area. */
+  /* Hero: 90vh with project deck peeking ~12vh at the bottom of the viewport. */
   .hero {
-    height:          100svh;
+    height:          90vh;
+    height:          90dvh;
+    max-height:      90vh;
+    max-height:      90dvh;
     justify-content: flex-start;
     padding-top:     max(1.5rem, 10vh);
+    padding-bottom:  12vh;
+    overflow:        hidden;
+    box-sizing:      border-box;
   }
 
   /*
@@ -1625,6 +1629,7 @@ body.home-intro-active.page--intro-ready::before {
   /* ── Mobile text block: hello-intro only (tagline hidden on mobile) */
   .hero_mobile_text {
     flex-shrink: 0;
+    order:       0;
     padding:     0.75rem 1.25rem 0.5rem;
   }
 
@@ -1646,6 +1651,7 @@ body.home-intro-active.page--intro-ready::before {
   */
   .hero_mobile_wordmark_wrap {
     flex:            0 0 auto;
+    order:           1;
     display:         flex;
     align-items:     center;
     justify-content: center;
@@ -1667,35 +1673,53 @@ body.home-intro-active.page--intro-ready::before {
     font-size:    clamp(7rem, 42vw, 15rem) !important;
   }
 
-  /* Mobile home: hide sticky note only — paperclip photo is repositioned below */
+  /* Mobile home: hide sticky note only — paperclip photo is centred in hero */
   .hero .sticky-card {
     display: none !important;
   }
 
-  /*
-    Mobile paperclip photo: flows BELOW the wordmark in the hero flex
-    column. Uses `order: 99` so DOM order (photo is rendered before
-    TitleSection in HomePage) does not affect visual order on mobile.
-    The PhotoCard wrapper is normally position:absolute — overridden
-    here so it participates in flex layout.
-  */
-  .hero .photo-card-hero {
-    position:    static !important;
-    top:         auto !important;
-    right:       auto !important;
-    left:        auto !important;
-    align-self:  center;
-    order:       99;
-    margin:      1.25rem auto 0;
-    width:       max-content;
-    z-index:     5;       /* below mobile menu button (z-index 10002) */
+  .home-intro-float--photo.hero__photo-zone {
+    position:        static !important;
+    top:             auto !important;
+    right:           auto !important;
+    left:            auto !important;
+    flex:            1 1 auto;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    min-height:      0;
+    width:           100%;
+    margin:          0 !important;
+    order:           2;
+    z-index:         5;
+    padding:         0.5rem 1rem 0.75rem;
+    box-sizing:      border-box;
   }
 
-  /* Constrain the inner image — PhotoCard hard-codes width: 200 inline */
+  .hero .photo-card-hero {
+    position:   static !important;
+    margin:     0 auto;
+    width:      max-content;
+    max-width:  100%;
+    max-height: 100%;
+  }
+
+  /* 2× base mobile size; still capped to fit hero + deck peek */
   .hero .photo-card-hero img {
-    width:     60vw !important;
-    max-width: 280px;
-    height:    auto !important;
+    display:    block;
+    width:      min(96vw, 400px) !important;
+    max-width:  400px;
+    max-height: min(44vh, 360px);
+    height:     auto !important;
+    object-fit: contain;
+  }
+
+  /* Project deck peeks into the bottom ~12vh while hero stays 90vh */
+  .deck-mobile-stack {
+    margin-top:     -12vh;
+    padding:        0 1.25rem 4rem;
+    position:       relative;
+    z-index:        4;
   }
 }
 
@@ -1707,6 +1731,41 @@ body.home-intro-active.page--intro-ready::before {
 /* ── Home deck: project card left accent (4px, case-study-aligned) ───── */
 .deck-card-surface {
   position: relative;
+}
+
+.deck-card-coming-soon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      #0a0a0a;
+  border-radius:   inherit;
+}
+
+.deck-card-coming-soon__label {
+  font-family:    'Inter', system-ui, sans-serif;
+  font-size:      clamp(1rem, 2.2vw, 1.35rem);
+  font-weight:    500;
+  letter-spacing: 0.08em;
+  color:          rgba(255, 255, 255, 0.78);
+  text-transform: none;
+}
+
+.deck-mobile-coming-soon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  min-height:      10rem;
+  padding:         2.5rem 1.25rem;
+  background:      #0a0a0a;
+  font-family:     'Inter', system-ui, sans-serif;
+  font-size:       1rem;
+  font-weight:     500;
+  letter-spacing:  0.06em;
+  color:           rgba(255, 255, 255, 0.78);
+}
+
+.deck-card-surface--coming-soon {
+  background: #0a0a0a;
 }
 
 .deck-card-surface--accent-foodhub::before {
@@ -2335,8 +2394,8 @@ body.home-intro-active.page--intro-ready::before {
   display:         flex;
   align-items:     center;
   justify-content: center;
-  width:           clamp(80px, 10vw, 112px);
-  height:          clamp(80px, 10vw, 112px);
+  width:           clamp(120px, 15vw, 168px);
+  height:          clamp(120px, 15vw, 168px);
 }
 
 .desk-item__icon {
@@ -2373,7 +2432,7 @@ body.home-intro-active.page--intro-ready::before {
 
 .desk-item__category {
   font-family:    'DM Mono', monospace;
-  font-size:      9px;
+  font-size:      10px;
   font-weight:    500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2382,7 +2441,7 @@ body.home-intro-active.page--intro-ready::before {
 
 .desk-item__label {
   font-family:    'DM Mono', monospace;
-  font-size:      11px;
+  font-size:      12px;
   font-weight:    500;
   letter-spacing: 0.04em;
   color:          #444;
@@ -2633,28 +2692,39 @@ body.home-intro-active.page--intro-ready::before {
   }
 
   .desk-surface--mobile {
-    flex:       none;
-    min-height: auto;
-    padding:    0.5rem 0 1rem;
-  }
-
-  .desk-item--mobile {
-    touch-action: auto;
-  }
-
-  .desk-item--mobile.desk-item--dragging {
-    transform: translate(-50%, -50%) rotate(var(--desk-mobile-rot, 0deg)) !important;
-  }
-
-  .desk-item--mobile.desk-item--solo {
     display:        flex;
     flex-direction: column;
     align-items:    center;
-    width:          max-content;
-    max-width:      min(100%, 420px);
-    transform:      translate(-50%, -50%)
-      translateX(var(--desk-mobile-x, 0))
-      rotate(var(--desk-mobile-rot, 0deg)) !important;
+    gap:            2.5rem;
+    flex:           none;
+    min-height:     auto;
+    width:          100%;
+    max-width:      min(100%, 520px);
+    padding:        2rem 1.25rem 3rem;
+    box-sizing:     border-box;
+  }
+
+  .desk-item--mobile {
+    position:     relative !important;
+    left:         auto !important;
+    top:          auto !important;
+    width:        max-content;
+    max-width:    100%;
+    transform:    rotate(var(--desk-mobile-rot, 0deg)) !important;
+    touch-action: auto;
+  }
+
+  .desk-item--mobile .desk-item__icon-wrap {
+    width:  clamp(140px, 44vw, 196px);
+    height: clamp(140px, 44vw, 196px);
+  }
+
+  .desk-item--mobile .desk-item__category {
+    font-size: 11px;
+  }
+
+  .desk-item--mobile .desk-item__label {
+    font-size: 13px;
   }
 
   .desk-item--mobile .desk-item__panel {

@@ -81,20 +81,10 @@ export default function HomePage() {
     const rand   = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 
     if (mobile) {
-      const photoTop  = rand(52, 68);
-      const stickyTop = Math.min(76, photoTop + 12 + rand(0, 10));
-
+      /* Photo position is handled in CSS (flex-centred in hero); sticky is hidden on mobile. */
       setFloatPos({
-        photo: {
-          position: 'absolute',
-          top:      `${photoTop}%`,
-          right:    `${rand(5, 18)}%`,
-        },
-        sticky: {
-          position: 'absolute',
-          top:      `${stickyTop}%`,
-          right:    `${rand(5, 18)}%`,
-        },
+        photo:  {},
+        sticky: {},
       });
     } else {
       const photoW   = 200;
@@ -140,7 +130,7 @@ export default function HomePage() {
       <section className="hero">
 
         <div
-          className="home-intro-float home-intro-float--photo"
+          className="home-intro-float home-intro-float--photo hero__photo-zone"
           style={floatPos?.photo ?? { position: 'absolute', top: '2.5rem', right: '16rem' }}
         >
           <PhotoCard

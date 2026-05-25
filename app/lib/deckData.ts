@@ -27,6 +27,8 @@ export interface DeckCard {
   btn?:    string;  /* optional CTA label */
   href?:   string;  /* optional CTA link target (and mobile-card wrapping link) */
   tags?:   DeckTag[];  /* optional GitHub-style chips rendered above the body */
+  /** Full-card black placeholder (project deck only). */
+  comingSoon?: boolean;
 }
 
 export const DECK_CARDS: DeckCard[] = [
@@ -52,13 +54,12 @@ export const DECK_CARDS: DeckCard[] = [
     href:    '/ai-project',
   },
   {
-    id:      2,
-    tab:     'Interactive Art',
-    num:     '03',
-    heading: 'Pixel Koi Pond',
-    sub:     'Interactive Canvas Artwork',
-    body:    'A pixel art koi pond, rebuilt from a first-year university project. Click to disturb the water.',
-    btn:     'Dive In →',
-    href:    '/404',
+    id:         2,
+    tab:        'Coming Soon',
+    num:        '03',
+    heading:    'Coming Soon',
+    sub:        '',
+    body:       '',
+    comingSoon: true,
   },
 ];

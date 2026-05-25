@@ -30,7 +30,6 @@ import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { DECK_CARDS, type DeckCard, type DeckTag } from '../lib/deckData';
 import AICheckoutDemo from './AICheckoutDemo';
 import DeckFoodHubScene from './DeckFoodHubScene';
-import KoiPond from './KoiPond';
 
 /* ── Tag chips — GitHub-style pills mirroring the supermarket case study ── */
 
@@ -123,10 +122,10 @@ const TAB_THEMES: TabTheme[] = [
     activeColor: '#fff',
     activeBorder: 'transparent',
   },
-  /* 2 — Interactive Art: muted forest green → teal (pond palette) */
+  /* 2 — Coming Soon placeholder */
   {
-    activeBg:    'linear-gradient(120deg, #1a3a2a 0%, #2a6060 100%)',
-    activeColor: '#e8f2ec',
+    activeBg:    '#1a1a1a',
+    activeColor: '#e8e8e8',
     activeBorder: 'transparent',
   },
 ];
@@ -307,7 +306,7 @@ const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function Projec
   /* ── Mobile flat view — clean stacked cards, no scroll section ─── */
   if (isMobile) {
     return (
-      <div ref={assignStickyShellRef} style={{ padding: '0 1.25rem 4rem' }}>
+      <div ref={assignStickyShellRef} className="deck-mobile-stack">
         {DECK_CARDS.map(card => {
           const theme = TAB_THEMES[card.id];
           /* Card 1 only: whole-card link. Cards 0 & 2 use inner CTAs — never nest <a>. */
@@ -343,87 +342,65 @@ const ProjectDeck = forwardRef<HTMLDivElement, ProjectDeckProps>(function Projec
                 {card.tab}
               </div>
 
-              {/* Card content — title, subtitle, intro paragraph only (no CTA, no demo) */}
-              <div style={{ padding: '24px 20px 28px', background: '#fff' }}>
-                {/* Label: matches AiIdea .h5 style */}
-                <p style={{
-                  fontFamily:    "'Inter', sans-serif",
-                  fontSize:      '0.875rem',
-                  fontWeight:    400,
-                  color:         '#888',
-                  textTransform: 'capitalize',
-                  margin:        '0 0 0.5rem',
-                }}>
-                  {card.sub}
-                </p>
-                {/* Heading: matches AiIdea .h2 style, scaled for card */}
-                <h2 style={{
-                  fontFamily:    "'Montserrat', sans-serif",
-                  fontSize:      '1.5rem',
-                  fontWeight:    700,
-                  lineHeight:    1.275,
-                  color:         '#111',
-                  margin:        '0 0 1rem',
-                  textTransform: 'capitalize',
-                }}>
-                  {card.heading}
-                </h2>
-                {/* Optional GitHub-style chips (only on cards that declare tags) */}
-                {card.tags && card.tags.length > 0 && (
-                  <TagChips tags={card.tags} size="sm" />
-                )}
-                {/* Body: matches AiIdea .paragraph-new style */}
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize:   '1rem',
-                  fontWeight: 400,
-                  lineHeight: '1.6em',
-                  color:      '#444',
-                  margin:     0,
-                }}>
-                  {card.body}
-                </p>
+              {card.comingSoon ? (
+                <div className="deck-mobile-coming-soon" aria-label="Coming soon">
+                  Coming Soon
+                </div>
+              ) : (
+                <div style={{ padding: '24px 20px 28px', background: '#fff' }}>
+                  <p style={{
+                    fontFamily:    "'Inter', sans-serif",
+                    fontSize:      '0.875rem',
+                    fontWeight:    400,
+                    color:         '#888',
+                    textTransform: 'capitalize',
+                    margin:        '0 0 0.5rem',
+                  }}>
+                    {card.sub}
+                  </p>
+                  <h2 style={{
+                    fontFamily:    "'Montserrat', sans-serif",
+                    fontSize:      '1.5rem',
+                    fontWeight:    700,
+                    lineHeight:    1.275,
+                    color:         '#111',
+                    margin:        '0 0 1rem',
+                    textTransform: 'capitalize',
+                  }}>
+                    {card.heading}
+                  </h2>
+                  {card.tags && card.tags.length > 0 && (
+                    <TagChips tags={card.tags} size="sm" />
+                  )}
+                  <p style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize:   '1rem',
+                    fontWeight: 400,
+                    lineHeight: '1.6em',
+                    color:      '#444',
+                    margin:     0,
+                  }}>
+                    {card.body}
+                  </p>
 
-                {card.id === 0 ? (
-                  <>
-                    <div style={{ marginTop: 18, minHeight: 220, position: 'relative' }}>
-                      <DeckFoodHubScene compact active={deckInView} />
-                    </div>
-                    {card.href && card.btn ? (
-                      <a
-                        href={card.href}
-                        className={`deck-btn${card.id === 0 ? ' deck-btn--sentence' : ''}`}
-                        style={{ marginTop: 18, display: 'inline-block' }}
-                      >
-                        {card.btn}
-                      </a>
-                    ) : null}
-                  </>
-                ) : card.id === 2 ? (
-                  <>
-                    <div style={{
-                      marginTop:    18,
-                      width:        '100%',
-                      aspectRatio:  '3 / 2',
-                      borderRadius: 10,
-                      overflow:     'hidden',
-                      background:   '#0a1a12',
-                      boxShadow:    '0 1px 4px rgba(0,0,0,0.1)',
-                    }}>
-                      <KoiPond />
-                    </div>
-                    {card.href && card.btn ? (
-                      <a
-                        href={card.href}
-                        className="deck-btn deck-btn--sentence"
-                        style={{ marginTop: 18, display: 'inline-block' }}
-                      >
-                        {card.btn}
-                      </a>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
+                  {card.id === 0 ? (
+                    <>
+                      <div style={{ marginTop: 18, minHeight: 220, position: 'relative' }}>
+                        <DeckFoodHubScene compact active={deckInView} />
+                      </div>
+                      {card.href && card.btn ? (
+                        <a
+                          href={card.href}
+                          className={`deck-btn${card.id === 0 ? ' deck-btn--sentence' : ''}`}
+                          style={{ marginTop: 18, display: 'inline-block' }}
+                        >
+                          {card.btn}
+                        </a>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              )}
             </Wrapper>
           );
         })}
@@ -564,7 +541,7 @@ function CardPanel({
     'deck-card-surface',
     isFront && card.id === 0 && 'deck-card-surface--accent-foodhub',
     isFront && card.id === 1 && 'deck-card-surface--accent-ai',
-    isFront && card.id === 2 && 'deck-card-surface--accent-age',
+    isFront && card.comingSoon && 'deck-card-surface--coming-soon',
   ]
     .filter(Boolean)
     .join(' ');
@@ -651,88 +628,19 @@ function CardPanel({
 
         {/* ── Active card content ── */}
         {isFront && (
-          card.id === 2 ? (
-            <div style={{
-              flex:         1,
-              minHeight:    0,
-              display:      'flex',
-              alignItems:   'stretch',
-              opacity:      contentReady ? 1 : 0,
-              transform:    contentReady ? 'translateY(0)' : 'translateY(9px)',
-              transition:   'opacity 0.34s ease, transform 0.34s ease',
-              overflow:     'hidden',
-            }}>
-
-              <div style={{
-                width:          '36%',
-                flexShrink:     0,
-                alignSelf:      'stretch',
-                display:        'flex',
-                flexDirection:  'column',
-                justifyContent: 'center',
-                padding:        '22px 32px 26px 48px',
-              }}>
-                <p style={{
-                  fontFamily:    "'Inter', sans-serif",
-                  fontSize:      '1rem',
-                  fontWeight:    400,
-                  lineHeight:    '1.6em',
-                  color:         '#888',
-                  textTransform: 'capitalize',
-                  margin:        '0 0 0.5rem',
-                }}>
-                  {card.sub}
-                </p>
-                <h2 style={{
-                  fontFamily:    "'Montserrat', sans-serif",
-                  fontSize:      '2rem',
-                  fontWeight:    700,
-                  lineHeight:    1.275,
-                  color:         '#111',
-                  textTransform: 'capitalize',
-                  margin:        '0 0 1.25rem',
-                  paddingBottom: 10,
-                  whiteSpace:    'pre-line',
-                }}>
-                  {card.heading}
-                </h2>
-                <p style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize:   '1rem',
-                  fontWeight: 400,
-                  lineHeight: '1.6em',
-                  color:      '#444',
-                  margin:     '0 0 1.25rem',
-                }}>
-                  {card.body}
-                </p>
-                {card.btn && card.href && (
-                  <a href={card.href} className="deck-btn deck-btn--sentence">
-                    {card.btn}
-                  </a>
-                )}
-              </div>
-
-              <div style={{
-                flex:           1,
-                minWidth:       0,
-                minHeight:      0,
-                display:        'flex',
-                padding:        16,
-                background:     '#ffffff',
-              }}>
-                <div style={{
-                  flex:         1,
-                  minHeight:    0,
-                  position:     'relative',
-                  overflow:     'hidden',
-                  borderRadius: 5,
-                  background:   '#0a1a12',
-                  boxShadow:    '0 1px 4px rgba(0,0,0,0.1)',
-                }}>
-                  {contentReady && <KoiPond />}
-                </div>
-              </div>
+          card.comingSoon ? (
+            <div
+              className="deck-card-coming-soon"
+              style={{
+                flex:       1,
+                minHeight:  0,
+                opacity:    contentReady ? 1 : 0,
+                transform:  contentReady ? 'translateY(0)' : 'translateY(9px)',
+                transition: 'opacity 0.34s ease, transform 0.34s ease',
+              }}
+              aria-label="Coming soon"
+            >
+              <span className="deck-card-coming-soon__label">Coming Soon</span>
             </div>
           ) : card.id === 1 ? (
             /* AI project — two-column split: left text / right demo */
