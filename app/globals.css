@@ -2245,15 +2245,10 @@ body.home-intro-active.page--intro-ready::before {
 
 .desk-surface {
   position:   relative;
+  flex:       1;
   width:      100%;
   max-width:  1100px;
   margin:     0 auto;
-}
-
-.desk-surface--solo {
-  position:   relative;
-  flex:       1;
-  width:      100%;
   min-height: clamp(320px, 55vh, 520px);
 }
 
@@ -2445,50 +2440,46 @@ body.home-intro-active.page--intro-ready::before {
   }
 }
 
+.desk-item__panel--navigable {
+  cursor: pointer;
+}
+
 .desk-expand-card {
   position:      relative;
-  padding:       1.25rem 1.35rem 1.1rem;
+  padding:       1.15rem 1.25rem 1rem;
   background:    #fff;
   border-radius: 12px;
   border:        1px solid rgba(0, 0, 0, 0.06);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  font-family:   'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .desk-expand-card__title {
-  font-family:    'Montserrat', sans-serif;
-  font-size:      1.1rem;
-  font-weight:    700;
+  font-family:    inherit;
+  font-size:      1.125rem;
+  font-weight:    600;
   color:          #111;
-  margin:         0 1.5rem 0.5rem 0;
-  line-height:    1.25;
+  margin:         0 0 0.5rem;
+  line-height:    1.35;
+  letter-spacing: -0.01em;
 }
 
 .desk-expand-card__body {
-  font-family: 'Inter', sans-serif;
+  font-family: inherit;
   font-size:   0.9375rem;
   line-height: 1.6;
-  color:       #555;
-  margin:      0 0 0.85rem;
+  color:       #444;
+  margin:      0 0 0.75rem;
 }
 
-.desk-expand-card__link {
-  display:         inline-block;
-  font-family:     'DM Mono', monospace;
-  font-size:       0.875rem;
-  font-weight:     500;
-  letter-spacing:  0.06em;
-  text-transform:  uppercase;
-  color:           #2a2a2a;
-  text-decoration: none;
-  border-bottom:   1px solid rgba(0, 0, 0, 0.2);
-  transition:      color 0.18s ease, border-color 0.18s ease;
-}
-
-.desk-expand-card__link:hover {
-  color:         #7c4dbd;
-  border-color:  #7c4dbd;
+.desk-expand-card__hint {
+  margin:      0.65rem 0 0;
+  font-family: inherit;
+  font-size:   0.8125rem;
+  line-height: 1.45;
+  color:       #888;
 }
 
 .desk-expand-card__close {
@@ -2537,22 +2528,87 @@ body.home-intro-active.page--intro-ready::before {
   margin:         0.65rem 0 0;
   padding:        0;
   list-style:     none;
-  font-family:    'DM Mono', monospace;
+  font-family:    inherit;
   font-size:      0.8125rem;
   font-weight:    400;
-  line-height:    1.6;
-  letter-spacing: 0.02em;
-  color:          rgba(0, 0, 0, 0.5);
+  line-height:    1.55;
+  color:          #666;
 }
 
 .desk-expand-card__instructions li + li {
   margin-top: 0.2rem;
 }
 
-.desk-expand-card__link--pond {
-  display:    block;
-  margin-top: 0.75rem;
-  text-align: center;
+/* SUEDE desk expand — partner logo marquee */
+.desk-expand-card--suede {
+  width:   min(440px, 92vw);
+  padding: 1rem 1.1rem 0.9rem;
+}
+
+.desk-expand-card__suede-marquee {
+  margin: 0.35rem 0 0.25rem;
+}
+
+.desk-expand-card--suede .suede-intro__marquee {
+  position:   relative;
+  width:      100%;
+  max-width:  100%;
+  left:       auto;
+  transform:  none;
+  margin-top: 0;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+}
+
+.desk-expand-card--suede .suede-intro__marquee-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.desk-expand-card--suede .suede-intro__marquee-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.desk-expand-card--suede .suede-intro__marquee-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.75rem;
+  width: max-content;
+  margin: 0;
+  padding: 0.35rem 1rem;
+  list-style: none;
+}
+
+.desk-expand-card--suede .suede-intro__marquee-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desk-expand-card--suede .suede-intro__marquee-logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.7;
+  filter: grayscale(100%);
 }
 
 /* ── Mobile: single centered item ────────────────────────────────── */
@@ -2576,7 +2632,7 @@ body.home-intro-active.page--intro-ready::before {
     white-space: normal;
   }
 
-  .desk-surface--mobile.desk-surface--solo {
+  .desk-surface--mobile {
     flex:       none;
     min-height: auto;
     padding:    0.5rem 0 1rem;

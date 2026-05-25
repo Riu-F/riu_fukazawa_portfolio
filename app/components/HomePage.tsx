@@ -166,12 +166,8 @@ export default function HomePage() {
               <span>graduate</span>
             </div>
             <div className="sticky-card__item">
-              <span className="sticky-card__checkbox"></span>
-              <span>make a portfolio</span>
-            </div>
-            <div className="sticky-card__item">
-              <span className="sticky-card__checkbox"></span>
-              <span>learn web dev</span>
+              <span className="sticky-card__checkbox">✓</span>
+              <span>build a portfolio</span>
             </div>
             <hr className="sticky-card__divider" />
             <div className="sticky-card__status">👀 open to work</div>

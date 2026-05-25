@@ -1,0 +1,911 @@
+/*
+  SUEDE side project — scoped to .aip.suede
+  Accent: --suede-purple (#5B21B6)
+*/
+
+.aip.suede {
+  --suede-purple: #5b21b6;
+  --suede-purple-rgb: 91, 33, 182;
+  --suede-purple-tint: rgba(var(--suede-purple-rgb), 0.04);
+  --suede-purple-tint-strong: rgba(var(--suede-purple-rgb), 0.06);
+  --suede-border: rgba(var(--suede-purple-rgb), 0.18);
+  --suede-border-light: rgba(var(--suede-purple-rgb), 0.12);
+}
+
+/* ── Section 1: Intro / hook ───────────────────────────────────── */
+
+.aip.suede .suede-intro {
+  position: relative;
+  width: 100%;
+  padding-top: clamp(5rem, 8vw, 6.25rem);
+  padding-bottom: clamp(3rem, 5vw, 4rem);
+  background:
+    linear-gradient(
+      180deg,
+      var(--suede-purple-tint-strong) 0%,
+      var(--suede-purple-tint) 28%,
+      transparent 72%
+    ),
+    #fafafa;
+  overflow: hidden;
+}
+
+.aip.suede .suede-intro__inner {
+  max-width: 960px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Identity row */
+.aip.suede .suede-intro__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.aip.suede .suede-intro__logo-mark {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--suede-purple);
+  box-shadow: 0 0 0 1px rgba(var(--suede-purple-rgb), 0.12);
+}
+
+.aip.suede .suede-intro__logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.aip.suede .suede-intro__identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.aip.suede .suede-intro__org-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #111;
+  line-height: 1.2;
+}
+
+.aip.suede .suede-intro__org-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #777;
+  max-width: 28rem;
+}
+
+/* Hook heading — aligned with AI / supermarket display scale */
+.aip.suede .suede-intro__heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(2rem, 0.5rem + 3.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: #111;
+  margin: 0 0 1.25rem;
+  max-width: 18ch;
+  text-align: left;
+}
+
+.aip.suede .suede-intro__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: #444;
+  margin: 0 0 clamp(2rem, 4vw, 2.75rem);
+  max-width: 62ch;
+  text-align: left;
+}
+
+/* ── Logo marquee ──────────────────────────────────────────────── */
+
+.aip.suede .suede-intro__marquee {
+  position: relative;
+  width: 100vw;
+  max-width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.25rem;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+}
+
+.aip.suede .suede-intro__marquee-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  cursor: default;
+}
+
+.aip.suede .suede-intro__marquee-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.aip.suede .suede-intro__marquee-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2.25rem;
+  width: max-content;
+  margin: 0;
+  padding: 0.5rem 2rem;
+  list-style: none;
+}
+
+.aip.suede .suede-intro__marquee-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aip.suede .suede-intro__marquee-logo {
+  display: block;
+  height: 36px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  opacity: 0.65;
+  filter: grayscale(100%);
+  transition:
+    opacity 280ms ease,
+    filter 280ms ease;
+}
+
+.aip.suede .suede-intro__marquee-item:hover .suede-intro__marquee-logo,
+.aip.suede .suede-intro__marquee-item:focus-within .suede-intro__marquee-logo {
+  opacity: 1;
+  filter: none;
+}
+
+@media (max-width: 768px) {
+  .aip.suede .suede-intro {
+    padding-top: clamp(4.5rem, 12vw, 5.5rem);
+  }
+
+  .aip.suede .suede-intro__heading {
+    max-width: none;
+  }
+
+  .aip.suede .suede-intro__marquee-track {
+    gap: 1.75rem;
+    padding-inline: 1.25rem;
+  }
+
+  .aip.suede .suede-intro__marquee-logo {
+    height: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aip.suede .suede-intro__marquee-logo {
+    transition: none;
+  }
+}
+
+/* ── Section 2: The role ───────────────────────────────────────── */
+
+.aip.suede .suede-role {
+  padding-top: clamp(3rem, 5vw, 4rem);
+  padding-bottom: clamp(3rem, 5vw, 4rem);
+  background: #fafafa;
+}
+
+.aip.suede .suede-role__inner {
+  max-width: 960px;
+}
+
+/* Role progression badges */
+.aip.suede .suede-role__progression {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.aip.suede .suede-role__badge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--suede-border-light);
+  border-radius: 999px;
+  background: #fff;
+  min-width: 0;
+}
+
+.aip.suede .suede-role__badge--earlier {
+  border-color: rgba(17, 17, 17, 0.12);
+  background: #fafafa;
+}
+
+.aip.suede .suede-role__badge--current {
+  border-color: rgba(var(--suede-purple-rgb), 0.22);
+  border-left-width: 3px;
+  border-left-color: var(--suede-purple);
+  border-radius: 12px;
+  background: var(--suede-purple-tint);
+  padding-left: calc(1rem - 2px);
+}
+
+.aip.suede .suede-role__badge-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #222;
+}
+
+.aip.suede .suede-role__badge--current .suede-role__badge-title {
+  font-weight: 600;
+  color: #111;
+}
+
+.aip.suede .suede-role__badge-period {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: #888;
+}
+
+.aip.suede .suede-role__connector {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--suede-purple-rgb), 0.45);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.aip.suede .suede-role__connector-v {
+  display: none;
+}
+
+.aip.suede .suede-role__description {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: #444;
+  margin: 0 0 clamp(2rem, 4vw, 2.5rem);
+  max-width: 62ch;
+}
+
+/* Stats bar */
+.aip.suede .suede-role__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aip.suede .suede-role__stat {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-width: 0;
+}
+
+.aip.suede .suede-role__stat-value {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.75rem, 2vw + 1rem, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--suede-purple);
+  margin: 0 0 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid rgba(var(--suede-purple-rgb), 0.2);
+}
+
+.aip.suede .suede-role__stat-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #666;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .aip.suede .suede-role__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .aip.suede .suede-role__progression {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .aip.suede .suede-role__badge {
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .aip.suede .suede-role__connector {
+    align-self: center;
+    padding: 0.15rem 0;
+  }
+
+  .aip.suede .suede-role__connector-h {
+    display: none;
+  }
+
+  .aip.suede .suede-role__connector-v {
+    display: inline;
+  }
+
+  .aip.suede .suede-role__stats {
+    gap: 1.25rem 1.5rem;
+  }
+}
+
+/* ── Section 3: Event highlights ───────────────────────────────── */
+
+.aip.suede .suede-events {
+  padding-top: clamp(3rem, 5vw, 4rem);
+  padding-bottom: clamp(3rem, 5vw, 4rem);
+  background: #fafafa;
+}
+
+.aip.suede .suede-events__inner {
+  max-width: 960px;
+}
+
+.aip.suede .suede-events__label {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--suede-purple);
+  margin: 0 0 1.5rem;
+  line-height: 1.3;
+}
+
+.aip.suede .suede-events__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aip.suede .suede-events__card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.aip.suede .suede-events__card:hover {
+  box-shadow: 0 6px 20px rgba(17, 17, 17, 0.08);
+  transform: translateY(-2px);
+}
+
+.aip.suede .suede-events__media {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #efefef;
+}
+
+.aip.suede .suede-events__media-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.aip.suede .suede-events__media--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+}
+
+.aip.suede .suede-events__media-placeholder-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #999;
+  text-align: center;
+  padding: 1rem;
+  line-height: 1.35;
+}
+
+.aip.suede .suede-events__body {
+  padding: 1.25rem 1.375rem 1.375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.aip.suede .suede-events__company {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.45rem;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #666;
+  line-height: 1.3;
+}
+
+.aip.suede .suede-events__company::before {
+  content: '';
+  flex-shrink: 0;
+  width: 2px;
+  height: 0.75rem;
+  border-radius: 1px;
+  background: var(--suede-purple);
+}
+
+.aip.suede .suede-events__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #111;
+  margin: 0;
+}
+
+.aip.suede .suede-events__description {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: #555;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .aip.suede .suede-events__grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aip.suede .suede-events__card {
+    transition: none;
+  }
+
+  .aip.suede .suede-events__card:hover {
+    transform: none;
+  }
+}
+
+/* ── Section 4: The Designathon ────────────────────────────────── */
+
+.aip.suede .suede-designathon {
+  padding-top: clamp(4rem, 6vw, 5rem);
+  padding-bottom: clamp(3rem, 5vw, 4rem);
+  background: #fafafa;
+}
+
+.aip.suede .suede-designathon__inner {
+  max-width: 960px;
+}
+
+.aip.suede .suede-designathon__label {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--suede-purple);
+  margin: 0 0 1.5rem;
+  line-height: 1.3;
+}
+
+/* Hero banner */
+.aip.suede .suede-designathon__hero {
+  position: relative;
+  width: 100%;
+  height: clamp(12.5rem, 28vw, 22.5rem);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  background: rgba(var(--suede-purple-rgb), 0.08);
+}
+
+.aip.suede .suede-designathon__hero--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--suede-purple-rgb), 0.1);
+}
+
+.aip.suede .suede-designathon__hero-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.aip.suede .suede-designathon__hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+.aip.suede .suede-designathon__hero-placeholder-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(var(--suede-purple-rgb), 0.45);
+  letter-spacing: 0.02em;
+}
+
+/* Title + stats row */
+.aip.suede .suede-designathon__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  align-items: start;
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.aip.suede .suede-designathon__copy {
+  min-width: 0;
+}
+
+.aip.suede .suede-designathon__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.75rem, 0.35rem + 2.5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #111;
+  margin: 0 0 0.35rem;
+}
+
+.aip.suede .suede-designathon__dates {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #888;
+  margin: 0 0 1.25rem;
+  line-height: 1.4;
+}
+
+.aip.suede .suede-designathon__description {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: #444;
+  margin: 0 0 1rem;
+  max-width: 52ch;
+}
+
+.aip.suede .suede-designathon__description:last-child {
+  margin-bottom: 0;
+}
+
+.aip.suede .suede-designathon__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.125rem 1.25rem;
+  margin: 0;
+  padding: 0.15rem 0 0;
+  list-style: none;
+  align-self: start;
+}
+
+.aip.suede .suede-designathon__stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.aip.suede .suede-designathon__stat-value {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.75rem, 1.5vw + 1.25rem, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--suede-purple);
+  margin-bottom: 0.25rem;
+}
+
+.aip.suede .suede-designathon__stat-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: #666;
+}
+
+/* Collaborating societies */
+.aip.suede .suede-designathon__collab {
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.aip.suede .suede-designathon__meta-label {
+  display: block;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.aip.suede .suede-designathon__societies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aip.suede .suede-designathon__society {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: #666;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 999px;
+  background: #fff;
+}
+
+/* Sponsor logos */
+.aip.suede .suede-designathon__sponsors {
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.aip.suede .suede-designathon__sponsor-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aip.suede .suede-designathon__sponsor-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.aip.suede .suede-designathon__sponsor-logo {
+  display: block;
+  height: 30px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  opacity: 0.65;
+  filter: grayscale(100%);
+  transition:
+    opacity 280ms ease,
+    filter 280ms ease;
+}
+
+.aip.suede .suede-designathon__sponsor-item:hover .suede-designathon__sponsor-logo {
+  opacity: 1;
+  filter: none;
+}
+
+/* Photo gallery — scoped overrides for PublicFolderLightboxGallery */
+.aip.suede .suede-designathon__gallery {
+  margin-top: 0;
+}
+
+.aip.suede .suede-designathon__gallery .pflg-gallery {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.875rem;
+  margin-top: 0;
+}
+
+.aip.suede .suede-designathon__gallery .pflg-gallery__thumb {
+  aspect-ratio: unset;
+  height: 170px;
+  border-radius: 8px;
+  border-color: #e4e4e4;
+  background: #f0f0f0;
+}
+
+.aip.suede .suede-designathon__gallery .pflg-gallery__thumb:hover {
+  border-color: rgba(var(--suede-purple-rgb), 0.35);
+  box-shadow: 0 8px 18px rgba(var(--suede-purple-rgb), 0.12);
+}
+
+.aip.suede .suede-designathon__gallery .pflg-gallery__thumb:focus-visible {
+  outline-color: var(--suede-purple);
+}
+
+@media (max-width: 768px) {
+  .aip.suede .suede-designathon__hero {
+    height: clamp(12.5rem, 42vw, 15rem);
+  }
+
+  .aip.suede .suede-designathon__intro {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .aip.suede .suede-designathon__stats {
+    padding-top: 0;
+  }
+
+  .aip.suede .suede-designathon__gallery .pflg-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aip.suede .suede-designathon__gallery .pflg-gallery__thumb {
+    height: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aip.suede .suede-designathon__sponsor-logos {
+    gap: 1.25rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aip.suede .suede-designathon__sponsor-logo {
+    transition: none;
+  }
+}
+
+/* ── Closing (pull quote + nav before footer) ────────────────────── */
+
+.aip.suede .suede-close {
+  padding-top: clamp(4rem, 6vw, 5rem);
+  padding-bottom: clamp(3rem, 5vw, 4rem);
+  background: #fafafa;
+}
+
+.aip.suede .suede-close__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 960px;
+}
+
+.aip.suede .suede-close__quote {
+  margin: 0 0 1.5rem;
+  padding: 0 0 0 1.125rem;
+  border: none;
+  border-left: 3px solid var(--suede-purple);
+  max-width: 52ch;
+}
+
+.aip.suede .suede-close__quote p {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.2rem, 0.25rem + 1.1vw, 1.375rem);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: #111;
+  text-align: left;
+}
+
+.aip.suede .suede-close__body {
+  margin: 0;
+  max-width: 62ch;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.65;
+  color: #444;
+  text-align: left;
+}
+
+.aip.suede .suede-close__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-top: 2rem;
+}
+
+.aip.suede .suede-close__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.2rem;
+  margin: 0;
+  border: 1px solid rgba(var(--suede-purple-rgb), 0.45);
+  border-radius: 999px;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(17, 17, 17, 0.82);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.aip.suede .suede-close__btn:hover {
+  border-color: rgba(var(--suede-purple-rgb), 0.75);
+  color: #111;
+  background-color: rgba(var(--suede-purple-rgb), 0.1);
+}
+
+.aip.suede .suede-close__btn:focus-visible {
+  outline: 2px solid var(--suede-purple);
+  outline-offset: 3px;
+}
+
+@media (max-width: 479px) {
+  .aip.suede .suede-close__actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 16rem;
+  }
+
+  .aip.suede .suede-close__btn,
+  .aip.suede .suede-close__btn.suede-close__btn--link {
+    width: 100%;
+  }
+}

@@ -54,6 +54,7 @@ export function getPublicFolderGalleryImages(
   const files = entries
     .filter((e) => e.isFile())
     .map((e) => e.name)
+    .filter((name) => !name.startsWith('.'))
     .filter((name) => IMAGE_EXTENSIONS.has(path.extname(name).toLowerCase()))
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 

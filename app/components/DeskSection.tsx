@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -9,9 +9,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import { SuedeLogoMarquee } from '../suede/components/SuedeLogoMarquee';
 import { useDraggable } from '../hooks/useDraggable';
 import { DESK_ITEMS, type DeskItem } from '../lib/deskData';
+import { SUEDE_DESK_MARQUEE_LOGOS } from '../lib/deskSuedeLogos';
 import KoiPond from './KoiPond';
+
+function deskItemHref(item: DeskItem) {
+  return item.internalRoute ?? item.link;
+}
 
 const MOBILE_MAX = 640;
 const OPEN_DELAY_MS = 200;
@@ -46,11 +52,11 @@ function DeskKoiExpand({
   item: DeskItem;
   isMobile: boolean;
 }) {
-  const href = item.internalRoute ?? item.link;
+  const href = deskItemHref(item);
 
   return (
     <div className="desk-expand-card desk-expand-card--pond" role="region" aria-label={item.label}>
-      <div className="desk-expand-card__pond">
+      <div className="desk-expand-card__pond" data-desk-interactive="true">
         <KoiPond />
       </div>
       <ul className="desk-expand-card__instructions" aria-label="Pond controls">
@@ -73,9 +79,36 @@ function DeskKoiExpand({
         )}
       </ul>
       {href && (
-        <Link href={href} className="desk-expand-card__link desk-expand-card__link--pond">
-          Dive in →
-        </Link>
+        <p className="desk-expand-card__hint">Click the icon or panel again to open project</p>
+      )}
+    </div>
+  );
+}
+
+function DeskSuedeExpand({
+  item,
+  titleId,
+}: {
+  item: DeskItem;
+  titleId: string;
+}) {
+  return (
+    <div
+      className="desk-expand-card desk-expand-card--suede"
+      role="region"
+      aria-labelledby={titleId}
+    >
+      <h3 id={titleId} className="desk-expand-card__title">
+        {item.label}
+      </h3>
+      {item.description && (
+        <p className="desk-expand-card__body">{item.description}</p>
+      )}
+      <div className="desk-expand-card__suede-marquee" data-desk-interactive="true">
+        <SuedeLogoMarquee logos={SUEDE_DESK_MARQUEE_LOGOS} />
+      </div>
+      {deskItemHref(item) && (
+        <p className="desk-expand-card__hint">Click the icon or panel again to open project</p>
       )}
     </div>
   );
@@ -88,7 +121,7 @@ function DeskTextExpand({
   item: DeskItem;
   titleId: string;
 }) {
-  const href = item.internalRoute ?? item.link;
+  const href = deskItemHref(item);
 
   return (
     <div className="desk-expand-card" role="region" aria-labelledby={titleId}>
@@ -99,9 +132,7 @@ function DeskTextExpand({
         <p className="desk-expand-card__body">{item.description}</p>
       )}
       {href && (
-        <Link href={href} className="desk-expand-card__link">
-          {item.internalRoute ? 'Open project →' : 'Visit link →'}
-        </Link>
+        <p className="desk-expand-card__hint">Click the icon or panel again to open project</p>
       )}
     </div>
   );
@@ -116,7 +147,6 @@ function DeskObject({
   isMobile,
   onOpen,
   onClose,
-  onToggleMobile,
   onDragStart,
 }: {
   item: DeskItem;
@@ -127,9 +157,10 @@ function DeskObject({
   isMobile: boolean;
   onOpen: () => void;
   onClose: () => void;
-  onToggleMobile: () => void;
   onDragStart: () => void;
 }) {
+  const router = useRouter();
+  const href = deskItemHref(item);
   const titleId = `desk-title-${item.id}`;
   const labelId = `desk-label-${item.id}`;
   const zoneRef = useRef<HTMLDivElement>(null);
@@ -237,14 +268,45 @@ function DeskObject({
         ['--desk-item-rot' as string]: `${item.rotation}deg`,
       };
 
-  const panelClass = isMobile
-    ? 'desk-item__panel'
-    : `desk-item__panel desk-item__panel--side desk-item__panel--side-${panelSide}`;
+  const panelClass = [
+    isMobile ? 'desk-item__panel' : `desk-item__panel desk-item__panel--side desk-item__panel--side-${panelSide}`,
+    expanded && href ? 'desk-item__panel--navigable' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const navigateToProject = useCallback(() => {
+    if (href) router.push(href);
+  }, [href, router]);
+
+  const handleTriggerClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    if (expanded && href) {
+      navigateToProject();
+      return;
+    }
+    if (!expanded) {
+      clearOpenTimer();
+      clearCloseTimer();
+      onOpen();
+    }
+  };
+
+  const handlePanelClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!expanded || !href) return;
+    if ((e.target as Element).closest('[data-desk-interactive]')) return;
+    navigateToProject();
+  };
+
+  const soloClass = DESK_ITEMS.length === 1 ? ' desk-item--solo' : '';
 
   return (
     <div
       ref={zoneRef}
-      className={`desk-item desk-item--solo${expanded ? ' desk-item--expanded' : ''}${isMobile ? ' desk-item--mobile' : ''}`}
+      className={`desk-item${soloClass}${expanded ? ' desk-item--expanded' : ''}${isMobile ? ' desk-item--mobile' : ''}`}
       style={style}
       onMouseEnter={handleZoneEnter}
       onMouseLeave={handleZoneLeave}
@@ -252,14 +314,7 @@ function DeskObject({
       <button
         type="button"
         className="desk-item__trigger"
-        onClick={() => {
-          if (!isMobile) return;
-          if (suppressClickRef.current) {
-            suppressClickRef.current = false;
-            return;
-          }
-          onToggleMobile();
-        }}
+        onClick={handleTriggerClick}
         onFocus={handleFocus}
         onBlur={handleBlur}
         aria-expanded={expanded}
@@ -276,9 +331,15 @@ function DeskObject({
       </button>
 
       {expanded && (
-        <div id={`desk-panel-${item.id}`} className={panelClass}>
+        <div
+          id={`desk-panel-${item.id}`}
+          className={panelClass}
+          onClick={handlePanelClick}
+        >
           {item.expandPond ? (
             <DeskKoiExpand item={item} isMobile={isMobile} />
+          ) : item.expandSuede ? (
+            <DeskSuedeExpand item={item} titleId={titleId} />
           ) : (
             <DeskTextExpand item={item} titleId={titleId} />
           )}
@@ -366,10 +427,6 @@ export default function DeskSection() {
     setExpandedId(id);
   }, []);
 
-  const toggleMobile = useCallback((id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  }, []);
-
   const handleDragStart = useCallback(() => {
     setExpandedId(null);
   }, []);
@@ -434,7 +491,7 @@ export default function DeskSection() {
 
       <div
         ref={surfaceRef}
-        className={`desk-surface desk-surface--solo${isMobile ? ' desk-surface--mobile' : ''}`}
+        className={`desk-surface${DESK_ITEMS.length === 1 ? ' desk-surface--solo' : ''}${isMobile ? ' desk-surface--mobile' : ''}`}
       >
         {DESK_ITEMS.map((item) => (
           <DeskObject
@@ -447,7 +504,6 @@ export default function DeskSection() {
             isMobile={isMobile}
             onOpen={() => open(item.id)}
             onClose={close}
-            onToggleMobile={() => toggleMobile(item.id)}
             onDragStart={handleDragStart}
           />
         ))}
